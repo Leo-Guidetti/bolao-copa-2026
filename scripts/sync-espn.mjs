@@ -1,0 +1,218 @@
+// Sincroniza a Copa 2026 a partir da API publica e GRATUITA da ESPN (sem chave).
+//  - Placares: scoreboard.
+//  - Scout COMPLETO por jogador via API "core" da ESPN: gols, assist, finalizacoes,
+//    finaliz. no alvo, defesas, DESARME, INTERCEPTACAO, defesa de penalti, cartoes,
+//    gol contra, minutos e "sem sofrer gol" (derivado). 100% automatico.
+//  Total de cada jogador (colunas do Player) = soma das linhas por jogo (MatchPlayerStat).
+// Uso:
+//   node scripts/sync-espn.mjs          -> aplica placares + scout
+//   node scripts/sync-espn.mjs --dry    -> so mostra, nao grava
+import { PrismaClient } from "@prisma/client";
+
+const SITE = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world";
+const CORE = "https://sports.core.api.espn.com/v2/sports/soccer/leagues/fifa.world";
+const START = "2026-06-11";
+
+const TEAM_ALIAS = {
+  "Brazil": "Brasil", "Mexico": "Mexico", "South Africa": "Africa do Sul", "South Korea": "Coreia do Sul",
+  "Korea Republic": "Coreia do Sul", "Czechia": "Republica Tcheca", "Czech Republic": "Republica Tcheca",
+  "Canada": "Canada", "Bosnia-Herzegovina": "Bosnia", "Bosnia and Herzegovina": "Bosnia", "Qatar": "Catar",
+  "Switzerland": "Suica", "Morocco": "Marrocos", "Haiti": "Haiti", "Scotland": "Escocia",
+  "USA": "Estados Unidos", "United States": "Estados Unidos", "Paraguay": "Paraguai", "Australia": "Australia",
+  "Turkey": "Turquia", "Türkiye": "Turquia", "Germany": "Alemanha", "Curacao": "Curacao", "Curaçao": "Curacao",
+  "Ivory Coast": "Costa do Marfim", "Ecuador": "Equador", "Netherlands": "Holanda", "Japan": "Japao",
+  "Sweden": "Suecia", "Tunisia": "Tunisia", "Belgium": "Belgica", "Egypt": "Egito", "Iran": "Ira",
+  "IR Iran": "Ira", "New Zealand": "Nova Zelandia", "Spain": "Espanha", "Cape Verde": "Cabo Verde",
+  "Cape Verde Islands": "Cabo Verde", "Saudi Arabia": "Arabia Saudita", "Uruguay": "Uruguai", "France": "Franca",
+  "Senegal": "Senegal", "Iraq": "Iraque", "Norway": "Noruega", "Argentina": "Argentina", "Algeria": "Argelia",
+  "Austria": "Austria", "Jordan": "Jordania", "Portugal": "Portugal", "Congo DR": "RD Congo", "DR Congo": "RD Congo",
+  "Uzbekistan": "Uzbequistao", "Colombia": "Colombia", "Croatia": "Croacia", "Ghana": "Gana", "England": "Inglaterra",
+  "Panama": "Panama",
+};
+
+const norm = (s) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z]/g, "");
+const toApp = (n) => TEAM_ALIAS[n] || n;
+const pairKey = (a, b) => [norm(a), norm(b)].sort().join("|");
+
+async function getJSON(url) {
+  const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (bolao-leigos)" } });
+  if (!r.ok) throw new Error(`ESPN ${url.slice(0, 80)} -> HTTP ${r.status}`);
+  return r.json();
+}
+
+// pool de concorrencia (pra nao martelar a ESPN)
+async function pool(items, n, worker) {
+  const out = []; let i = 0;
+  const runners = Array.from({ length: Math.min(n, items.length) }, async () => {
+    while (i < items.length) { const idx = i++; out[idx] = await worker(items[idx], idx); }
+  });
+  await Promise.all(runners);
+  return out;
+}
+
+function datesFrom(start) {
+  const out = [];
+  const d = new Date(start + "T00:00:00Z");
+  const end = new Date(); end.setUTCDate(end.getUTCDate() + 1);
+  while (d <= end) {
+    out.push(`${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, "0")}${String(d.getUTCDate()).padStart(2, "0")}`);
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return out;
+}
+
+async function fetchEvents(log) {
+  const byId = new Map();
+  for (const dt of datesFrom(START)) {
+    let j;
+    try { j = await getJSON(`${SITE}/scoreboard?dates=${dt}`); } catch (e) { log(`  (scoreboard ${dt}: ${e.message})`); continue; }
+    for (const e of j.events || []) byId.set(e.id, e);
+  }
+  return [...byId.values()];
+}
+
+function parseEvent(e) {
+  const c = e.competitions?.[0] || {};
+  const cs = c.competitors || [];
+  const home = cs.find((x) => x.homeAway === "home");
+  const away = cs.find((x) => x.homeAway === "away");
+  return {
+    id: e.id,
+    homeApp: toApp(home?.team?.displayName), awayApp: toApp(away?.team?.displayName),
+    homeScore: home?.score != null ? Number(home.score) : null,
+    awayScore: away?.score != null ? Number(away.score) : null,
+    finished: e.status?.type?.state === "post",
+  };
+}
+
+const cval = (cats, cat, name) => {
+  const c = (cats || []).find((x) => x.name === cat);
+  const s = (c?.stats || []).find((y) => y.name === name);
+  return s ? (Number(s.value) || 0) : 0;
+};
+
+export async function run({ prisma, dry = false, log = console.log }) {
+  const events = (await fetchEvents(log)).map(parseEvent);
+  log(`ESPN: ${events.length} jogos encontrados.`);
+
+  const matches = await prisma.match.findMany();
+  const byPair = new Map();
+  for (const m of matches) {
+    if (m.homeTeam === "A definir" || m.awayTeam === "A definir") continue;
+    byPair.set(pairKey(m.homeTeam, m.awayTeam), m);
+  }
+  const matchFor = (ev) => byPair.get(pairKey(ev.homeApp, ev.awayApp)) || null;
+
+  // ---- 1) PLACARES ----
+  let placUpd = 0; const unmatched = new Set();
+  for (const ev of events) {
+    const m = matchFor(ev);
+    if (!m) { if (ev.homeApp && ev.awayApp) unmatched.add(`${ev.homeApp} x ${ev.awayApp}`); continue; }
+    if (ev.homeScore == null || ev.awayScore == null) continue;
+    let hs = ev.homeScore, as = ev.awayScore;
+    if (norm(ev.homeApp) !== norm(m.homeTeam)) { const t = hs; hs = as; as = t; }
+    if (m.homeScore !== hs || m.awayScore !== as || m.finished !== ev.finished) {
+      log(`${ev.finished ? "[FT]" : "[--]"} ${m.homeTeam} ${hs} x ${as} ${m.awayTeam}`);
+      placUpd++;
+      if (!dry) await prisma.match.update({ where: { id: m.id }, data: { homeScore: hs, awayScore: as, finished: ev.finished } });
+    }
+  }
+  log(`${dry ? "[DRY] " : ""}Placares atualizados: ${placUpd}.`);
+  if (unmatched.size) log(`Jogos da ESPN sem match (${unmatched.size}): ${[...unmatched].slice(0, 8).join(", ")}`);
+
+  // ---- 2) SCOUT COMPLETO POR JOGO (via API core) ----
+  const players = await prisma.player.findMany();
+  const idx = new Map(), idxLast = new Map();
+  for (const p of players) {
+    idx.set(norm(p.team) + "|" + norm(p.name), p);
+    const parts = p.name.split(" ");
+    idxLast.set(norm(p.team) + "|" + norm(parts[parts.length - 1]), p);
+  }
+  const find = (teamApp, name) =>
+    idx.get(norm(teamApp) + "|" + norm(name)) ||
+    idxLast.get(norm(teamApp) + "|" + norm(name.split(" ").pop())) || null;
+
+  const finished = events.filter((e) => e.finished && matchFor(e));
+  const playerMiss = new Set();
+  let rows = 0;
+  for (const ev of finished) {
+    const m = matchFor(ev);
+    let sum;
+    try { sum = await getJSON(`${SITE}/summary?event=${ev.id}`); } catch (e) { log(`  (sem summary ${ev.id})`); continue; }
+    // monta lista de (player do nosso banco, teamId, athId)
+    const targets = [];
+    for (const block of sum.rosters || []) {
+      const teamApp = toApp(block.team?.displayName);
+      const teamId = block.team?.id;
+      for (const r of block.roster || []) {
+        const p = find(teamApp, r.athlete?.displayName);
+        if (!p) { playerMiss.add(`${r.athlete?.displayName} (${teamApp})`); continue; }
+        targets.push({ p, teamId, athId: r.athlete?.id });
+      }
+    }
+    // busca stats core em paralelo
+    const stats = await pool(targets, 6, async (t) => {
+      try {
+        const j = await getJSON(`${CORE}/events/${ev.id}/competitions/${ev.id}/competitors/${t.teamId}/roster/${t.athId}/statistics/0`);
+        return { t, cats: j.splits?.categories };
+      } catch { return { t, cats: null }; }
+    });
+    for (const { t, cats } of stats) {
+      if (!cats) continue;
+      const p = t.p;
+      const minutes = cval(cats, "general", "minutes");
+      const conceded = cval(cats, "goalKeeping", "goalsConceded");
+      const onTarget = cval(cats, "offensive", "shotsOnTarget");
+      const totalShots = cval(cats, "offensive", "totalShots");
+      const gls = cval(cats, "offensive", "totalGoals");
+      const data = {
+        goals: gls,
+        assists: cval(cats, "offensive", "goalAssists"),
+        // Buckets exclusivos: gol NÃO conta como finalização; "no alvo" exclui as que viraram gol.
+        shots: Math.max(0, totalShots - onTarget),   // finalização fora do alvo
+        shotsOnTarget: Math.max(0, onTarget - gls),  // no alvo que não viraram gol
+        saves: cval(cats, "goalKeeping", "saves"),
+        penaltiesSaved: cval(cats, "goalKeeping", "penaltyKicksSaved"),
+        tackles: cval(cats, "defensive", "totalTackles"),
+        interceptions: cval(cats, "defensive", "interceptions"),
+        yellow: cval(cats, "general", "yellowCards"),
+        red: cval(cats, "general", "redCards"),
+        ownGoals: cval(cats, "general", "ownGoals"),
+        minutes,
+        cleanSheet: (minutes > 0 && conceded === 0 && ["GOL", "ZAG", "LAT"].includes(p.position)) ? 1 : 0,
+      };
+      rows++;
+      if (!dry) {
+        await prisma.matchPlayerStat.upsert({
+          where: { matchId_playerId: { matchId: m.id, playerId: p.id } },
+          update: { ...data, fixtureId: Number(ev.id) || null },
+          create: { matchId: m.id, playerId: p.id, fixtureId: Number(ev.id) || null, ...data },
+        });
+      }
+    }
+    log(`  ${m.homeTeam} x ${m.awayTeam}: ${targets.length} jogadores`);
+  }
+  log(`${dry ? "[DRY] " : ""}Scout por jogo: ${rows} linhas em ${finished.length} jogos encerrados.`);
+  if (playerMiss.size) log(`Jogadores sem match (${playerMiss.size}) - ex: ${[...playerMiss].slice(0, 10).join(", ")}`);
+
+  // ---- 3) RECOMPUTA TOTAIS ----
+  if (!dry) await recomputeTotals(prisma);
+  log(`${dry ? "[DRY] " : ""}Totais recomputados.`);
+}
+
+export async function recomputeTotals(prisma) {
+  const ALL = ["goals", "assists", "cleanSheet", "saves", "yellow", "red", "ownGoals", "shots", "shotsOnTarget", "tackles", "interceptions", "penaltiesSaved"];
+  await prisma.player.updateMany({ data: Object.fromEntries(ALL.map((f) => [f, 0])) });
+  const grouped = await prisma.matchPlayerStat.groupBy({ by: ["playerId"], _sum: Object.fromEntries(ALL.map((f) => [f, true])) });
+  for (const g of grouped) {
+    await prisma.player.update({ where: { id: g.playerId }, data: Object.fromEntries(ALL.map((f) => [f, g._sum[f] || 0])) });
+  }
+}
+
+const isMain = process.argv[1] && /sync-espn\.mjs$/.test(process.argv[1]);
+if (isMain) {
+  const prisma = new PrismaClient();
+  run({ prisma, dry: process.argv.includes("--dry") })
+    .catch((e) => { console.error(e.message || e); process.exitCode = 1; })
+    .finally(() => prisma.$disconnect());
+}

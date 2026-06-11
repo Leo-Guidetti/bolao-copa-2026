@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --text: #0b0f14;
+  --muted: #5b6470;
+  --faint: #9aa3af;
+  --border: rgba(0, 0, 0, 0.08);
+  --hover: rgba(0, 0, 0, 0.05);
+}
+
+.dark {
+  color-scheme: dark;
+  --bg: #0b0f14;
+  --surface: #161b22;
+  --text: #e6e9ef;
+  --muted: #9aa3b2;
+  --faint: #6b7480;
+  --border: rgba(255, 255, 255, 0.10);
+  --hover: rgba(255, 255, 255, 0.06);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl shadow-card;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition active:scale-[0.98];
+  }
+  .btn-primary { @apply btn bg-brand text-white hover:bg-brand-dark; }
+  .btn-ghost {
+    @apply btn;
+    background: var(--hover);
+    color: var(--text);
+  }
+  .input {
+    @apply w-full rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/20;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .input:focus { border-color: #0a7d3e; }
+  .pill { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium; }
+}
+
+/* Remove as setinhas dos inputs numéricos (evita cortar o número) */
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }

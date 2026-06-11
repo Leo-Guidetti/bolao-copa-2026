@@ -1,0 +1,145 @@
+// Bolão da Copa 2026 — schema do banco
+// Produção: PostgreSQL (Supabase).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ----- Pessoas -----
+model Participant {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?  @unique
+  passwordHash String?
+  avatarUrl String?
+  entryFee  Float    @default(0) // legado (não usado no pote)
+  paid      Boolean  @default(false) // admin marca quem já pagou
+  roastText String?  // crítica do Leigo Master (gerada 1x/dia)
+  roastDay  String?  // dia (yyyy-mm-dd, BRT) do último roast
+  isAdmin   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  bets  Bet[]
+  squad Squad?
+}
+
+// ----- Jogos -----
+model Match {
+  id        String   @id @default(cuid())
+  stage     String   @default("GROUP") // GROUP | R32 | R16 | QF | SF | THIRD | FINAL
+  group     String? // ex: "A"
+  round     Int?     // rodada da fase de grupos (1-3); null no mata-mata
+  homeTeam  String
+  awayTeam  String
+  kickoff   DateTime
+  homeScore Int?
+  awayScore Int?
+  finished  Boolean  @default(false)
+  order     Int      @default(0)
+
+  bets        Bet[]
+  playerStats MatchPlayerStat[]
+}
+
+// ----- Apostas de placar -----
+model Bet {
+  id            String @id @default(cuid())
+  participantId String
+  matchId       String
+  homeGuess     Int
+  awayGuess     Int
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  match       Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([participantId, matchId])
+}
+
+// ----- Jogadores (para Monte sua Seleção) -----
+model Player {
+  id       String @id @default(cuid())
+  name     String
+  team     String
+  position String // GOL | ZAG | LAT | MEI | ATA
+  price    Float  @default(5)
+
+  // scout acumulado na competição
+  goals      Int @default(0)
+  assists    Int @default(0)
+  cleanSheet Int @default(0) // nº de jogos sem sofrer gol
+  saves      Int @default(0) // defesas difíceis (goleiro)
+  yellow     Int @default(0)
+  red        Int @default(0)
+  ownGoals   Int @default(0)
+  shots          Int @default(0)
+  shotsOnTarget  Int @default(0)
+  tackles        Int @default(0)
+  interceptions  Int @default(0)
+  penaltiesSaved Int @default(0)
+
+  squadPlayers SquadPlayer[]
+  matchStats   MatchPlayerStat[]
+}
+
+// ----- Scout por jogador EM CADA jogo (alimenta a aba "Stats dos jogos") -----
+model MatchPlayerStat {
+  id        String @id @default(cuid())
+  matchId   String
+  playerId  String
+  fixtureId Int?   // id do jogo na API-Football (auditoria)
+  minutes   Int    @default(0)
+
+  goals      Int @default(0)
+  assists    Int @default(0)
+  cleanSheet Int @default(0)
+  saves      Int @default(0)
+  yellow     Int @default(0)
+  red        Int @default(0)
+  ownGoals   Int @default(0)
+  shots          Int @default(0)
+  shotsOnTarget  Int @default(0)
+  tackles        Int @default(0)
+  interceptions  Int @default(0)
+  penaltiesSaved Int @default(0)
+
+  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, playerId])
+  @@index([matchId])
+}
+
+// ----- Escalação do participante -----
+model Squad {
+  id            String  @id @default(cuid())
+  participantId String  @unique
+  formation     String  @default("4-3-3")
+  captainId     String?
+
+  participant Participant   @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  players     SquadPlayer[]
+}
+
+model SquadPlayer {
+  id       String @id @default(cuid())
+  squadId  String
+  playerId String
+  isStarter Boolean @default(true)
+
+  squad  Squad  @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id])
+
+  @@unique([squadId, playerId])
+}
+
+// ----- Config editável pelo admin (chave -> JSON em texto) -----
+model Setting {
+  key   String @id
+  value String // JSON serializado
+}
