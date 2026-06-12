@@ -57,7 +57,7 @@ export default function Pitch({ formation, starters = [], reserves = [], camisa1
           {rows.map((row, i) => (
             <div key={i} className="flex items-center justify-evenly px-2">
               {row.map((slot) => (
-                <Slot key={slot.key} slot={slot} camisa10Id={camisa10Id} onToggleCaptain={onToggleCaptain} onRemove={onRemove} showPoints={showPoints} pointsOf={pointsOf} />
+                <Slot key={slot.key} slot={slot} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={onToggleCaptain} onRemove={onRemove} showPoints={showPoints} pointsOf={pointsOf} />
               ))}
             </div>
           ))}
@@ -68,7 +68,7 @@ export default function Pitch({ formation, starters = [], reserves = [], camisa1
         <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--faint)]">Reservas</div>
         <div className="flex items-start justify-between gap-1">
           {benchSlots.map((slot) => (
-            <Slot key={slot.key} slot={slot} camisa10Id={camisa10Id} onToggleCaptain={onToggleCaptain} onRemove={onRemove} showPoints={showPoints} pointsOf={pointsOf} dark />
+            <Slot key={slot.key} slot={slot} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={onToggleCaptain} onRemove={onRemove} showPoints={showPoints} pointsOf={pointsOf} dark />
           ))}
         </div>
       </div>
@@ -76,7 +76,7 @@ export default function Pitch({ formation, starters = [], reserves = [], camisa1
   );
 }
 
-function Slot({ slot, camisa10Id, onToggleCaptain, onRemove, showPoints, pointsOf, dark }) {
+function Slot({ slot, camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPoints, pointsOf, dark }) {
   const { pos, player } = slot;
   if (!player) {
     return (
