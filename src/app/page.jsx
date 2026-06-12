@@ -3,6 +3,7 @@ import { computeStandings } from "@/lib/standings";
 import { prisma } from "@/lib/prisma";
 import { flagUrl } from "@/lib/flags";
 import { STAGE_LABELS } from "@/lib/defaults";
+import { playerScore, scoreBreakdown } from "@/lib/scoring";
 import ScoredPitch from "@/components/ScoredPitch";
 import LeigoMaster from "@/components/LeigoMaster";
 
@@ -53,12 +54,55 @@ export default async function HomePage() {
   const squadCost = squad ? squad.players.reduce((s, sp) => s + (sp.player?.price || 0), 0) : 0;
   const squadOver = !!squad && squadCost > budgetCap;
 
+  // Craque do dia: melhor jogador (por pontos no jogo) dos jogos de ONTEM.
+  const dayOf = (d) => new Date(d).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const ydStr = new Date(Date.now() - 86400000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const allMatches = await prisma.match.findMany({ where: { finished: true } });
+  const ydMatchIds = allMatches.filter((m) => dayOf(m.kickoff) === ydStr).map((m) => m.id);
+  let craque = null;
+  if (ydMatchIds.length) {
+    const stats = await prisma.matchPlayerStat.findMany({ where: { matchId: { in: ydMatchIds } }, include: { player: true, match: true } });
+    for (const s of stats) {
+      const pts = playerScore({ ...s, position: s.player.position }, sq.scout);
+      if (!craque || pts > craque.pts) craque = { s, pts, player: s.player, match: s.match };
+    }
+  }
+  if (craque && craque.pts <= 0) craque = null;
+  const craqueBreak = craque ? scoreBreakdown({ ...craque.s, position: craque.player.position }, sq.scout) : [];
+
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Olá, {me.name} 👋</h1>
         <p className="text-sm text-[var(--muted)]">Seu resumo no bolão.</p>
       </div>
+
+      {craque && (
+        <section className="card border-l-4 border-l-accent p-4">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">⭐</span>
+            <h2 className="font-semibold">Craque do dia</h2>
+            <span className="text-xs text-[var(--faint)]">melhor dos jogos de ontem</span>
+          </div>
+          <div className="mt-2 flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--hover)]">
+              {flagUrl(craque.player.team) ? <img src={flagUrl(craque.player.team)} alt={craque.player.team} className="h-full w-full object-cover" /> : null}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-semibold">{craque.player.name}</div>
+              <div className="truncate text-xs text-[var(--faint)]">{craque.player.position} · {craque.player.team} · {craque.match.homeTeam} {craque.match.homeScore}×{craque.match.awayScore} {craque.match.awayTeam}</div>
+            </div>
+            <div className="shrink-0 text-2xl font-bold text-brand-dark">{Number(craque.pts.toFixed(1))}<span className="text-sm font-normal text-[var(--muted)]"> pts</span></div>
+          </div>
+          {craqueBreak.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {craqueBreak.map((b) => (
+                <span key={b.key} className={`pill text-xs ${b.points < 0 ? "bg-red-500/15 text-red-600" : "bg-brand-light text-brand-dark"}`}>{b.label}: {b.count}×{b.weight} = {Number(b.points.toFixed(1))}</span>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       <LeigoMaster />
 
