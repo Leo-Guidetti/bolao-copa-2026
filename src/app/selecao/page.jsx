@@ -180,6 +180,7 @@ export default function SelecaoPage() {
     ["yellow", "Cartão amarelo", "Desconta pontos."],
     ["red", "Cartão vermelho", "Desconta pontos."],
     ["ownGoal", "Gol contra", "Desconta pontos."],
+    ["goalConceded", "Gol sofrido", "Cada gol que o time sofre com o goleiro em campo desconta pontos do goleiro."],
   ];
 
   function ListRow({ p }) {

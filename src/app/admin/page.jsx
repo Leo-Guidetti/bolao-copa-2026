@@ -8,7 +8,7 @@ const STAGES = ["GROUP", "R32", "R16", "QF", "SF", "THIRD", "FINAL"];
 const STAGE_LABELS = { GROUP: "Grupos", R32: "16 avos", R16: "Oitavas", QF: "Quartas", SF: "Semi", THIRD: "3º lugar", FINAL: "Final" };
 const POSITIONS = ["GOL", "ZAG", "LAT", "MEI", "ATA"];
 const PRICE_TIERS = [[1, "Comum"], [2, "Bom"], [3, "Muito bom"], [5, "Fundamental"], [8, "Craque"]];
-const EVENT_LABELS = { goal:"Gol", assist:"Assistencia", shotOnTarget:"Finaliz. no alvo", shot:"Finalizacao", tackleInterception:"Desarme / Interceptação", cleanSheet:"Sem sofrer gol", save:"Defesa", penaltySaved:"Defesa de penalti", yellow:"Amarelo", red:"Vermelho", ownGoal:"Gol contra" };
+const EVENT_LABELS = { goal:"Gol", assist:"Assistencia", shotOnTarget:"Finaliz. no alvo", shot:"Finalizacao", tackleInterception:"Desarme / Interceptação", cleanSheet:"Sem sofrer gol", save:"Defesa", penaltySaved:"Defesa de penalti", yellow:"Amarelo", red:"Vermelho", ownGoal:"Gol contra", goalConceded:"Gol sofrido (goleiro)" };
 const TABS = [
   ["scoring", "Pontuação (placar)"],
   ["squadRules", "Regras da seleção"],

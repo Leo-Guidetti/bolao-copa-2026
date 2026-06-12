@@ -142,6 +142,7 @@ export async function syncEspn({ prisma, sinceDays = null, includeLive = false, 
         tackles: cval(cats, "defensive", "totalTackles"), interceptions: cval(cats, "defensive", "interceptions"),
         yellow: cval(cats, "general", "yellowCards"), red: cval(cats, "general", "redCards"), ownGoals: cval(cats, "general", "ownGoals"),
         minutes, cleanSheet: (minutes > 0 && conceded === 0 && ["GOL", "ZAG", "LAT"].includes(p.position)) ? 1 : 0,
+        goalsConceded: p.position === "GOL" ? conceded : 0,
       };
       scoutLinhas++;
       if (!dry) {
@@ -167,7 +168,7 @@ export async function syncEspn({ prisma, sinceDays = null, includeLive = false, 
 }
 
 async function recomputeTotals(prisma) {
-  const ALL = ["goals", "assists", "cleanSheet", "saves", "yellow", "red", "ownGoals", "shots", "shotsOnTarget", "tackles", "interceptions", "penaltiesSaved"];
+  const ALL = ["goals", "assists", "cleanSheet", "saves", "yellow", "red", "ownGoals", "shots", "shotsOnTarget", "tackles", "interceptions", "penaltiesSaved", "goalsConceded"];
   await prisma.player.updateMany({ data: Object.fromEntries(ALL.map((f) => [f, 0])) });
   const grouped = await prisma.matchPlayerStat.groupBy({ by: ["playerId"], _sum: Object.fromEntries(ALL.map((f) => [f, true])) });
   for (const g of grouped) await prisma.player.update({ where: { id: g.playerId }, data: Object.fromEntries(ALL.map((f) => [f, g._sum[f] || 0])) });

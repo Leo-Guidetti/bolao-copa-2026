@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/session";
 import { getSetting } from "@/lib/config";
 import { playerScore } from "@/lib/scoring";
 
-const ALL = ["goals", "assists", "cleanSheet", "saves", "yellow", "red", "ownGoals", "shots", "shotsOnTarget", "tackles", "interceptions", "penaltiesSaved"];
+const ALL = ["goals", "assists", "cleanSheet", "saves", "yellow", "red", "ownGoals", "shots", "shotsOnTarget", "tackles", "interceptions", "penaltiesSaved", "goalsConceded"];
 // Campos que o admin edita na mão (ESPN não fornece). O resto vem do sync.
 const MANUAL = ["tackles", "interceptions", "penaltiesSaved"];
 

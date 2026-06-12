@@ -66,6 +66,7 @@ export function playerScore(player, scout) {
   sum += n("yellow") * v("yellow");
   sum += n("red") * v("red");
   sum += n("ownGoals") * v("ownGoal");
+  sum += n("goalsConceded") * v("goalConceded");
   return sum;
 }
 
@@ -82,6 +83,7 @@ const SCOUT_EVENTS = [
   { key: "yellow", label: "Cartão amarelo", stat: "yellow" },
   { key: "red", label: "Cartão vermelho", stat: "red" },
   { key: "ownGoal", label: "Gol contra", stat: "ownGoals" },
+  { key: "goalConceded", label: "Gol sofrido", stat: "goalsConceded" },
 ];
 export function scoreBreakdown(player, scout) {
   const pos = player.position;

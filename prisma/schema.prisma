@@ -82,6 +82,7 @@ model Player {
   tackles        Int @default(0)
   interceptions  Int @default(0)
   penaltiesSaved Int @default(0)
+  goalsConceded  Int @default(0) // gols sofridos pelo time com ele em campo (peso só p/ goleiro)
 
   squadPlayers SquadPlayer[]
   matchStats   MatchPlayerStat[]
@@ -107,6 +108,7 @@ model MatchPlayerStat {
   tackles        Int @default(0)
   interceptions  Int @default(0)
   penaltiesSaved Int @default(0)
+  goalsConceded  Int @default(0)
 
   match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
   player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
