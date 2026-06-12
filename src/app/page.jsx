@@ -120,7 +120,7 @@ export default async function HomePage() {
               </>
             )}
           </div>
-          <span className="shrink-0 self-center whitespace-nowrap font-semibold text-brand">{missing.length ? "Palpitar →" : "Ver bolão →"}</span>
+          <span className="shrink-0 self-center whitespace-nowrap font-semibold text-brand">Palpitar →</span>
         </div>
       </a>
 
