@@ -70,7 +70,7 @@ export default function Nav() {
       {open && (
         <div className="fixed inset-0 z-40" onClick={() => setOpen(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <aside className="absolute left-0 top-0 flex h-full w-72 max-w-[80%] flex-col bg-[var(--surface)] p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <aside className="absolute left-0 top-0 flex h-full w-72 max-w-[80%] flex-col bg-[var(--bg)] p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center gap-2">
               <img src="/icon-192.png" alt="" className="h-7 w-7 rounded-md" />
               <span className="font-semibold tracking-tight">Leigos da Bola</span>

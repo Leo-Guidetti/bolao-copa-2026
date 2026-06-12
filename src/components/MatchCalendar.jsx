@@ -45,9 +45,9 @@ export default function MatchCalendar() {
   for (let i = 0; i < startWd; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
     const key = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    cells.push({ d, key, count: (byDay[key] || []).length });
+    cells.push({ d, key, games: byDay[key] || [] });
   }
-  const monthLabel = new Date(Date.UTC(y, m, 1)).toLocaleDateString("pt-BR", { timeZone: "UTC", month: "long", year: "numeric" });
+  const monthLabel = `${new Date(Date.UTC(y, m, 1)).toLocaleDateString("pt-BR", { timeZone: "UTC", month: "short" }).replace(".", "")}/${y}`;
   const prev = () => setCursor(m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 });
   const next = () => setCursor(m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 });
   const today = dayKey(new Date());
@@ -60,7 +60,7 @@ export default function MatchCalendar() {
         <h2 className="font-semibold">📅 Calendário da Copa</h2>
         <div className="flex items-center gap-1">
           <button onClick={prev} aria-label="Mês anterior" className="flex h-7 w-7 items-center justify-center rounded-full text-lg hover:bg-[var(--hover)]">‹</button>
-          <span className="w-28 text-center text-sm font-medium capitalize">{monthLabel}</span>
+          <span className="w-20 text-center text-sm font-medium">{monthLabel}</span>
           <button onClick={next} aria-label="Próximo mês" className="flex h-7 w-7 items-center justify-center rounded-full text-lg hover:bg-[var(--hover)]">›</button>
         </div>
       </div>
@@ -71,9 +71,12 @@ export default function MatchCalendar() {
       <div className="mt-1 grid grid-cols-7 gap-1">
         {cells.map((c, i) => c === null ? <div key={i} /> : (
           <button key={i} onClick={() => setSel(c.key)}
-            className={`relative flex aspect-square items-center justify-center rounded-lg text-xs transition ${c.key === sel ? "bg-brand font-bold text-white" : c.key === today ? "bg-[var(--hover)] font-bold" : c.count ? "hover:bg-[var(--hover)]" : "text-[var(--faint)]"}`}>
-            {c.d}
-            {c.count > 0 && <span className={`absolute bottom-1 h-1 w-1 rounded-full ${c.key === sel ? "bg-white" : "bg-brand"}`} />}
+            className={`flex min-h-[2.75rem] flex-col items-center gap-0.5 rounded-lg p-0.5 transition ${c.key === sel ? "bg-brand text-white" : c.key === today ? "bg-[var(--hover)]" : c.games.length ? "hover:bg-[var(--hover)]" : ""}`}>
+            <span className={`text-xs font-medium ${c.games.length || c.key === sel ? "" : "text-[var(--faint)]"}`}>{c.d}</span>
+            {c.games.slice(0, 2).map((g, j) => (
+              <span key={j} className={`text-[8px] leading-none ${c.key === sel ? "text-white/90" : "text-[var(--muted)]"}`}>{fmtTime(g.kickoff)}</span>
+            ))}
+            {c.games.length > 2 && <span className={`text-[8px] leading-none ${c.key === sel ? "text-white/80" : "text-[var(--faint)]"}`}>+{c.games.length - 2}</span>}
           </button>
         ))}
       </div>
@@ -85,19 +88,25 @@ export default function MatchCalendar() {
         {selGames.length === 0 ? (
           <p className="text-sm text-[var(--faint)]">Sem jogos nesse dia.</p>
         ) : selGames.map((mt) => (
-          <div key={mt.id} className="flex items-center gap-2 rounded-xl bg-[var(--hover)] p-2">
-            <div className="w-10 shrink-0 text-center">
-              <div className="text-xs font-bold tabular-nums">{fmtTime(mt.kickoff)}</div>
-              <div className="text-[9px] text-[var(--faint)]">{tag(mt)}</div>
+          <div key={mt.id} className="rounded-xl bg-[var(--hover)] p-2">
+            <div className="flex items-center gap-2">
+              <div className="w-10 shrink-0 text-center">
+                <div className="text-xs font-bold tabular-nums">{fmtTime(mt.kickoff)}</div>
+                <div className="text-[9px] text-[var(--faint)]">{tag(mt)}</div>
+              </div>
+              <div className="flex flex-1 items-center justify-center gap-2 text-sm">
+                <span className="flex items-center gap-1.5">{teamAbbr(mt.homeTeam)}<Flag t={mt.homeTeam} /></span>
+                {mt.finished ? <b className="tabular-nums">{mt.homeScore} × {mt.awayScore}</b> : <span className="text-[var(--faint)]">×</span>}
+                <span className="flex items-center gap-1.5"><Flag t={mt.awayTeam} />{teamAbbr(mt.awayTeam)}</span>
+              </div>
             </div>
-            <div className="flex flex-1 items-center justify-center gap-2 text-sm">
-              <span className="flex items-center gap-1.5">{teamAbbr(mt.homeTeam)}<Flag t={mt.homeTeam} /></span>
-              {mt.finished ? <b className="tabular-nums">{mt.homeScore} × {mt.awayScore}</b> : <span className="text-[var(--faint)]">×</span>}
-              <span className="flex items-center gap-1.5"><Flag t={mt.awayTeam} />{teamAbbr(mt.awayTeam)}</span>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1 border-t border-[var(--border)] pt-1.5 text-[10px]">
+              <span className="text-[var(--faint)]">📺</span>
+              <span className="pill bg-brand-light text-brand-dark">CazéTV</span>
+              <span className="pill bg-[var(--surface)] text-[var(--muted)]">Globo · SBT · SporTV · Globoplay (jogos selecionados)</span>
             </div>
           </div>
         ))}
-        <p className="text-[11px] text-[var(--faint)]">📺 Todos os jogos ao vivo na <b>CazéTV</b> (YouTube). Jogos selecionados também na Globo, SBT, SporTV e Globoplay.</p>
       </div>
     </section>
   );
