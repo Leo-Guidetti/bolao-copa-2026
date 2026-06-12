@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Pitch from "@/components/Pitch";
 import LeigoMaster from "@/components/LeigoMaster";
 import { playerScore } from "@/lib/scoring";
+import { flagUrl } from "@/lib/flags";
 
 function Avatar({ url, name, size = "h-7 w-7" }) {
   const i = (name || "?").trim().charAt(0).toUpperCase();
@@ -11,6 +12,23 @@ function Avatar({ url, name, size = "h-7 w-7" }) {
     <span className={`flex ${size} shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--hover)] text-[11px] font-bold text-[var(--muted)]`}>
       {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : i}
     </span>
+  );
+}
+
+function CmpCard({ p, pts, win }) {
+  if (!p) return <div className="card flex items-center justify-center p-1.5 text-xs text-[var(--faint)] opacity-50">—</div>;
+  const flag = flagUrl(p.team);
+  return (
+    <div className={`card flex items-center gap-1.5 p-1.5 ${win ? "ring-2 ring-brand" : ""}`}>
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--hover)]">
+        {flag ? <img src={flag} alt="" className="h-full w-full object-cover" /> : null}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-xs font-medium leading-tight">{p.name}</span>
+        <span className="block truncate text-[10px] text-[var(--faint)]">{p.position} · {p.team}</span>
+      </span>
+      <span className={`shrink-0 text-sm font-bold tabular-nums ${win ? "text-brand-dark" : ""}`}>{pts.toFixed(1)}</span>
+    </div>
   );
 }
 
@@ -92,21 +110,18 @@ export default function TimesPage() {
                   <div className="text-xs text-[var(--faint)]">{mt > ot ? "você lidera 🔥" : mt < ot ? "você atrás" : "empate"}</div>
                   <div><div className="truncate text-sm font-semibold">{opp.name}</div><div className={`text-3xl font-bold tabular-nums ${ot > mt ? "text-brand-dark" : ""}`}>{ot.toFixed(1)}</div></div>
                 </div>
-                <table className="w-full text-xs">
-                  <tbody>
-                    {rows.map((r, idx) => {
-                      const pa = r.a ? pp(r.a, mine) : null, pb = r.b ? pp(r.b, opp) : null;
-                      const aWin = pa != null && (pb == null || pa > pb), bWin = pb != null && (pa == null || pb > pa);
-                      return (
-                        <tr key={idx} className="border-t border-[var(--border)]">
-                          <td className={`py-1 pr-2 text-right ${aWin ? "font-semibold text-brand-dark" : "text-[var(--muted)]"}`}>{r.a ? `${r.a.name} ${pa.toFixed(1)}` : "—"}</td>
-                          <td className="px-1 text-center text-[10px] font-semibold text-[var(--faint)]">{r.pos}</td>
-                          <td className={`py-1 pl-2 text-left ${bWin ? "font-semibold text-brand-dark" : "text-[var(--muted)]"}`}>{r.b ? `${pb.toFixed(1)} ${r.b.name}` : "—"}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <div className="space-y-1.5">
+                  {rows.map((r, idx) => {
+                    const pa = r.a ? pp(r.a, mine) : null, pb = r.b ? pp(r.b, opp) : null;
+                    const aWin = pa != null && (pb == null || pa > pb), bWin = pb != null && (pa == null || pb > pa);
+                    return (
+                      <div key={idx} className="grid grid-cols-2 gap-2">
+                        <CmpCard p={r.a} pts={pa} win={aWin} />
+                        <CmpCard p={r.b} pts={pb} win={bWin} />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             );
           })()}
