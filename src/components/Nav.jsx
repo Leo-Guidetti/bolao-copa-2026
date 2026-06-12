@@ -44,6 +44,7 @@ export default function Nav() {
   const isActive = (href) => (href === "/" ? path === "/" : path.startsWith(href));
 
   return (
+    <>
     <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--surface)] backdrop-blur-xl">
       <nav className="mx-auto flex w-full max-w-5xl items-center gap-2 px-3 py-2.5 sm:px-4">
         <button onClick={() => setOpen(true)} aria-label="Abrir menu"
@@ -65,10 +66,10 @@ export default function Nav() {
           <ThemeToggle />
         </div>
       </nav>
+    </header>
 
-      {/* Drawer lateral */}
       {open && (
-        <div className="fixed inset-0 z-40" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-50" onClick={() => setOpen(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <aside className="absolute left-0 top-0 flex h-full w-72 max-w-[80%] flex-col bg-[var(--bg)] p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center gap-2">
@@ -92,6 +93,6 @@ export default function Nav() {
           </aside>
         </div>
       )}
-    </header>
+    </>
   );
 }

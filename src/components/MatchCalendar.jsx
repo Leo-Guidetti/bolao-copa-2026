@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { flagUrl, teamAbbr } from "@/lib/flags";
 import { STAGE_LABELS } from "@/lib/defaults";
+import { broadcastersFor } from "@/lib/broadcast";
 
 const WD = ["D", "S", "T", "Q", "Q", "S", "S"];
 const fmtTime = (d) => new Date(d).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
@@ -56,57 +57,63 @@ export default function MatchCalendar() {
 
   return (
     <section className="card p-4">
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="font-semibold">📅 Calendário da Copa</h2>
-        <div className="flex items-center gap-1">
+      <h2 className="mb-2 font-semibold">📅 Calendário da Copa</h2>
+
+      {/* Grade compacta — largura limitada para não ficar gigante no desktop */}
+      <div className="mx-auto max-w-[20rem]">
+        <div className="mb-2 flex items-center justify-between">
           <button onClick={prev} aria-label="Mês anterior" className="flex h-7 w-7 items-center justify-center rounded-full text-lg hover:bg-[var(--hover)]">‹</button>
-          <span className="w-20 text-center text-sm font-medium">{monthLabel}</span>
+          <span className="text-sm font-medium">{monthLabel}</span>
           <button onClick={next} aria-label="Próximo mês" className="flex h-7 w-7 items-center justify-center rounded-full text-lg hover:bg-[var(--hover)]">›</button>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold text-[var(--faint)]">
+          {WD.map((w, i) => <div key={i}>{w}</div>)}
+        </div>
+        <div className="mt-1 grid grid-cols-7 gap-1">
+          {cells.map((c, i) => c === null ? <div key={i} /> : (
+            <button key={i} onClick={() => setSel(c.key)}
+              className={`flex aspect-square flex-col items-center justify-center gap-1 rounded-lg text-xs transition ${c.key === sel ? "bg-brand font-semibold text-white" : c.key === today ? "bg-[var(--hover)] font-semibold" : c.games.length ? "hover:bg-[var(--hover)]" : ""}`}>
+              <span className={c.games.length || c.key === sel ? "" : "text-[var(--faint)]"}>{c.d}</span>
+              <span className={`h-1 w-1 rounded-full ${c.games.length ? (c.key === sel ? "bg-white" : "bg-brand") : "bg-transparent"}`} />
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold text-[var(--faint)]">
-        {WD.map((w, i) => <div key={i}>{w}</div>)}
-      </div>
-      <div className="mt-1 grid grid-cols-7 gap-1">
-        {cells.map((c, i) => c === null ? <div key={i} /> : (
-          <button key={i} onClick={() => setSel(c.key)}
-            className={`flex min-h-[2.75rem] flex-col items-center gap-0.5 rounded-lg p-0.5 transition ${c.key === sel ? "bg-brand text-white" : c.key === today ? "bg-[var(--hover)]" : c.games.length ? "hover:bg-[var(--hover)]" : ""}`}>
-            <span className={`text-xs font-medium ${c.games.length || c.key === sel ? "" : "text-[var(--faint)]"}`}>{c.d}</span>
-            {c.games.slice(0, 2).map((g, j) => (
-              <span key={j} className={`text-[8px] leading-none ${c.key === sel ? "text-white/90" : "text-[var(--muted)]"}`}>{fmtTime(g.kickoff)}</span>
-            ))}
-            {c.games.length > 2 && <span className={`text-[8px] leading-none ${c.key === sel ? "text-white/80" : "text-[var(--faint)]"}`}>+{c.games.length - 2}</span>}
-          </button>
-        ))}
-      </div>
-
+      {/* Lista do dia selecionado — largura total, com transmissão por jogo */}
       <div className="mt-3 space-y-2">
         <div className="text-xs font-semibold capitalize text-[var(--muted)]">
           {sel ? new Date(sel + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" }) : ""}
         </div>
         {selGames.length === 0 ? (
           <p className="text-sm text-[var(--faint)]">Sem jogos nesse dia.</p>
-        ) : selGames.map((mt) => (
-          <div key={mt.id} className="rounded-xl bg-[var(--hover)] p-2">
-            <div className="flex items-center gap-2">
-              <div className="w-10 shrink-0 text-center">
-                <div className="text-xs font-bold tabular-nums">{fmtTime(mt.kickoff)}</div>
-                <div className="text-[9px] text-[var(--faint)]">{tag(mt)}</div>
+        ) : selGames.map((mt) => {
+          const bc = broadcastersFor(mt.homeTeam, mt.awayTeam);
+          const others = bc.filter((c) => c.code !== "CAZE");
+          return (
+            <div key={mt.id} className="rounded-xl bg-[var(--hover)] p-2">
+              <div className="flex items-center gap-2">
+                <div className="w-10 shrink-0 text-center">
+                  <div className="text-xs font-bold tabular-nums">{fmtTime(mt.kickoff)}</div>
+                  <div className="text-[9px] text-[var(--faint)]">{tag(mt)}</div>
+                </div>
+                <div className="flex flex-1 items-center justify-center gap-2 text-sm">
+                  <span className="flex items-center gap-1.5">{teamAbbr(mt.homeTeam)}<Flag t={mt.homeTeam} /></span>
+                  {mt.finished ? <b className="tabular-nums">{mt.homeScore} × {mt.awayScore}</b> : <span className="text-[var(--faint)]">×</span>}
+                  <span className="flex items-center gap-1.5"><Flag t={mt.awayTeam} />{teamAbbr(mt.awayTeam)}</span>
+                </div>
               </div>
-              <div className="flex flex-1 items-center justify-center gap-2 text-sm">
-                <span className="flex items-center gap-1.5">{teamAbbr(mt.homeTeam)}<Flag t={mt.homeTeam} /></span>
-                {mt.finished ? <b className="tabular-nums">{mt.homeScore} × {mt.awayScore}</b> : <span className="text-[var(--faint)]">×</span>}
-                <span className="flex items-center gap-1.5"><Flag t={mt.awayTeam} />{teamAbbr(mt.awayTeam)}</span>
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 border-t border-[var(--border)] pt-1.5 text-[10px]">
+                <span className="text-[var(--faint)]">📺</span>
+                <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 font-semibold text-emerald-500">CazéTV</span>
+                {others.length > 0 && (
+                  <span className="text-[var(--muted)]">{others.map((o) => o.label).join(" · ")}</span>
+                )}
               </div>
             </div>
-            <div className="mt-1.5 flex flex-wrap items-center gap-1 border-t border-[var(--border)] pt-1.5 text-[10px]">
-              <span className="text-[var(--faint)]">📺</span>
-              <span className="pill bg-brand-light text-brand-dark">CazéTV</span>
-              <span className="pill bg-[var(--surface)] text-[var(--muted)]">Globo · SBT · SporTV · Globoplay (jogos selecionados)</span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

@@ -1,7 +1,7 @@
 import { currentParticipant } from "@/lib/session";
 import { computeStandings } from "@/lib/standings";
 import { prisma } from "@/lib/prisma";
-import { flagUrl } from "@/lib/flags";
+import { flagUrl, teamAbbr } from "@/lib/flags";
 import { STAGE_LABELS } from "@/lib/defaults";
 import { playerScore, scoreBreakdown } from "@/lib/scoring";
 import MatchCalendar from "@/components/MatchCalendar";
@@ -71,12 +71,58 @@ export default async function HomePage() {
   if (craque && craque.pts <= 0) craque = null;
   const craqueBreak = craque ? scoreBreakdown({ ...craque.s, position: craque.player.position }, sq.scout) : [];
 
+  // Palpites faltando nos próximos 3 dias (jogos que ainda não começaram e sem aposta minha)
+  const now = new Date();
+  const in3d = new Date(now.getTime() + 3 * 86400000);
+  const upcoming = await prisma.match.findMany({
+    where: { kickoff: { gt: now, lte: in3d }, finished: false },
+    orderBy: { kickoff: "asc" },
+  });
+  const myBets = upcoming.length
+    ? await prisma.bet.findMany({ where: { participantId: me.id, matchId: { in: upcoming.map((m) => m.id) } }, select: { matchId: true } })
+    : [];
+  const betSet = new Set(myBets.map((b) => b.matchId));
+  const missing = upcoming.filter((m) => !betSet.has(m.id));
+  const spDay = (d) => new Date(d).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const todayStr = spDay(now), tmrwStr = spDay(new Date(now.getTime() + 86400000));
+  const fmtMatch = (m) => {
+    const ds = spDay(m.kickoff);
+    const dl = ds === todayStr ? "hoje" : ds === tmrwStr ? "amanhã" : new Date(m.kickoff).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "short" }).replace(".", "");
+    const t = new Date(m.kickoff).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+    return `${teamAbbr(m.homeTeam)} × ${teamAbbr(m.awayTeam)} (${dl} ${t})`;
+  };
+
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Olá, {me.name} 👋</h1>
         <p className="text-sm text-[var(--muted)]">Seu resumo no bolão.</p>
       </div>
+
+      {/* Atalho pro bolão + status dos palpites dos próximos 3 dias */}
+      <a href="/apostas" className={`card block border-l-4 p-4 transition hover:bg-[var(--hover)] ${missing.length ? "border-l-amber-500" : "border-l-brand"}`}>
+        <div className="flex items-center gap-3">
+          <span className="shrink-0 text-2xl">{missing.length ? "📝" : "✅"}</span>
+          <div className="min-w-0 flex-1">
+            {missing.length ? (
+              <>
+                <h2 className="font-semibold">Você tem {missing.length} palpite{missing.length > 1 ? "s" : ""} faltando</h2>
+                <p className="mt-0.5 text-sm text-[var(--muted)]">
+                  Próximos 3 dias: {missing.slice(0, 4).map(fmtMatch).join(" · ")}{missing.length > 4 ? ` · +${missing.length - 4}` : ""}
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="font-semibold">Palpites em dia! 🎉</h2>
+                <p className="mt-0.5 text-sm text-[var(--muted)]">
+                  {upcoming.length ? `Seus ${upcoming.length} jogo${upcoming.length > 1 ? "s" : ""} dos próximos 3 dias já estão palpitados.` : "Sem jogos nos próximos 3 dias — relaxa e aproveita."}
+                </p>
+              </>
+            )}
+          </div>
+          <span className="shrink-0 self-center whitespace-nowrap font-semibold text-brand">{missing.length ? "Palpitar →" : "Ver bolão →"}</span>
+        </div>
+      </a>
 
       {craque && (
         <section className="card border-l-4 border-l-accent p-4">
