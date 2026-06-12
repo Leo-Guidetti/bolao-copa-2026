@@ -195,8 +195,15 @@ export async function run({ prisma, dry = false, log = console.log }) {
   log(`${dry ? "[DRY] " : ""}Scout por jogo: ${rows} linhas em ${finished.length} jogos encerrados.`);
   if (playerMiss.size) log(`Jogadores sem match (${playerMiss.size}) - ex: ${[...playerMiss].slice(0, 10).join(", ")}`);
 
-  // ---- 3) RECOMPUTA TOTAIS ----
-  if (!dry) await recomputeTotals(prisma);
+  // ---- 3) RECOMPUTA TOTAIS + carimba o horário do último sync ----
+  if (!dry) {
+    await recomputeTotals(prisma);
+    await prisma.setting.upsert({
+      where: { key: "lastSyncAt" },
+      update: { value: JSON.stringify(new Date().toISOString()) },
+      create: { key: "lastSyncAt", value: JSON.stringify(new Date().toISOString()) },
+    });
+  }
   log(`${dry ? "[DRY] " : ""}Totais recomputados.`);
 }
 

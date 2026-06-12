@@ -37,6 +37,16 @@ export async function GET(req) {
     out.leigoMaster = { participantes, comRoastHoje };
   } catch { /* tabela pode não existir ainda */ }
 
+  // Último sync da ESPN (carimbado pelo scripts/sync-espn.mjs a cada rodada)
+  try {
+    const row = await prisma.setting.findUnique({ where: { key: "lastSyncAt" } });
+    const iso = row ? JSON.parse(row.value) : null;
+    const minAtras = iso ? Math.round((Date.now() - new Date(iso).getTime()) / 60000) : null;
+    out.sync = { lastSyncAt: iso, minutosAtras: minAtras };
+    if (minAtras != null && minAtras > 90) { out.ok = false; out.sync.alerta = "sync parado há mais de 90 min"; }
+    if (iso == null) out.sync.alerta = "nunca sincronizou";
+  } catch { /* setting pode não existir ainda */ }
+
   if (full) {
     if (process.env.OPENAI_API_KEY) {
       try {
