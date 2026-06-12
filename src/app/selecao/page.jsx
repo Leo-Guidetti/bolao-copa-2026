@@ -196,7 +196,7 @@ export default function SelecaoPage() {
           <span className="flex items-center gap-1 truncate text-sm font-medium">{p.name}{isCap && <span className="pill bg-accent/20 text-[9px] font-bold text-yellow-700">C10</span>}</span>
           <span className="block truncate text-[11px] text-[var(--faint)]">{p.team}</span>
         </span>
-        {(readOnly || ptsOf(p) !== 0) && <span className="shrink-0 text-sm font-bold tabular-nums">{(ptsOf(p) * (isCap ? capMult : 1)).toFixed(1)}<span className="ml-0.5 text-[10px] font-normal text-[var(--faint)]">pts</span></span>}
+        {(readOnly || ptsOf(p) !== 0) && <span className={`shrink-0 text-sm font-bold tabular-nums ${ptsOf(p) * (isCap ? capMult : 1) < 0 ? "text-red-500" : ""}`}>{(ptsOf(p) * (isCap ? capMult : 1)).toFixed(1)}<span className="ml-0.5 text-[10px] font-normal text-[var(--faint)]">pts</span></span>}
         <span className="pill shrink-0 bg-accent/15 font-semibold text-yellow-700">{p.price}¢</span>
         {!readOnly && (
           <span className="flex shrink-0 items-center gap-1">
@@ -367,7 +367,7 @@ export default function SelecaoPage() {
                       <span className="block text-[11px] text-[var(--faint)]">{p.position} - {p.team}</span>
                     </span>
                     <span className="ml-auto flex items-center gap-1.5">
-                      <span className="text-sm font-bold tabular-nums">{ptsOf(p).toFixed(1)}<span className="text-[10px] font-normal text-[var(--faint)]"> pts</span></span>
+                      <span className={`text-sm font-bold tabular-nums ${ptsOf(p) < 0 ? "text-red-500" : ""}`}>{ptsOf(p).toFixed(1)}<span className="text-[10px] font-normal text-[var(--faint)]"> pts</span></span>
                       {inStart && <span className="pill bg-brand-light text-brand-dark">T</span>}
                       {inRes && <span className="pill bg-[var(--hover)] text-[var(--muted)]">R</span>}
                       <span className="pill bg-accent/15 font-semibold text-yellow-700">{p.price}¢</span>

@@ -27,7 +27,7 @@ function CmpCard({ p, pts, win }) {
         <span className="block truncate text-xs font-medium leading-tight">{p.name}</span>
         <span className="block truncate text-[10px] text-[var(--faint)]">{p.position} · {p.team}</span>
       </span>
-      <span className={`shrink-0 text-sm font-bold tabular-nums ${win ? "text-brand-dark" : ""}`}>{pts.toFixed(1)}</span>
+      <span className={`shrink-0 text-sm font-bold tabular-nums ${pts < 0 ? "text-red-500" : win ? "text-brand-dark" : ""}`}>{pts.toFixed(1)}</span>
     </div>
   );
 }
