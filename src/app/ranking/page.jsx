@@ -1,5 +1,6 @@
 import { computeStandings } from "@/lib/standings";
 import LeigoMaster from "@/components/LeigoMaster";
+import RankingTable from "@/components/RankingTable";
 
 export const dynamic = "force-dynamic";
 
@@ -47,47 +48,11 @@ export default async function RankingPage() {
 
       {/* Tabela de ranking */}
       <section className="card overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-[var(--hover)] text-left text-[var(--muted)]">
-            <tr>
-              <th className="px-4 py-3 font-medium">#</th>
-              <th className="px-4 py-3 font-medium">Participante</th>
-              <th className="hidden px-4 py-3 text-right font-medium sm:table-cell">Placar ({pctBets}%)</th>
-              <th className="hidden px-4 py-3 text-right font-medium sm:table-cell">Seleção ({pctSquad}%)</th>
-              <th className="px-4 py-3 text-right font-medium">Final</th>
-              <th className="px-4 py-3 text-right font-medium">Prêmio</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ranked.map((r) => (
-              <tr key={r.participantId} className="border-t border-[var(--border)]">
-                <td className="px-4 py-3 font-semibold">
-                  {medal[r.place - 1] || r.place}
-                </td>
-                <td className="px-4 py-3 font-medium">{r.name}</td>
-                <td className="hidden px-4 py-3 text-right tabular-nums sm:table-cell">{r.betPts.toFixed(1)}</td>
-                <td className="hidden px-4 py-3 text-right tabular-nums sm:table-cell">{r.squadPts.toFixed(1)}</td>
-                <td className="px-4 py-3 text-right font-semibold tabular-nums">
-                  {r.final.toFixed(1)}
-                </td>
-                <td className="px-4 py-3 text-right tabular-nums text-brand-dark">
-                  {prizeByPlace[r.place] ? brl(prizeByPlace[r.place]) : "—"}
-                </td>
-              </tr>
-            ))}
-            {ranked.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-[var(--muted)]">
-                  Nenhum participante ainda. Cadastre no painel de Admin.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        <RankingTable ranked={ranked} prizeByPlace={prizeByPlace} wB={wB} wS={wS} pctBets={pctBets} pctSquad={pctSquad} />
       </section>
 
       <p className="text-center text-xs text-[var(--faint)]">
-        Pontuação final = % do líder em cada etapa: placar vale {pctBets}% e seleção {pctSquad}% (pesos editáveis no Admin).
+        Toque num participante para ver a composição dos pontos. Final = placar ({pctBets}%) + seleção ({pctSquad}%), pesos editáveis no Admin.
       </p>
     </div>
   );

@@ -151,8 +151,6 @@ export default async function HomePage() {
         </section>
       )}
 
-      <LeigoMaster />
-
       {squadOver && (
         <div className="card border-l-4 border-l-red-500 bg-red-50 p-4 dark:bg-red-950/30">
           <div className="flex items-start gap-3">
@@ -201,6 +199,8 @@ export default async function HomePage() {
           <div className="text-xs text-[var(--faint)]">vale {pctSquad}% do ranking</div>
         </div>
       </div>
+
+      <LeigoMaster />
 
       <div className="grid gap-5 lg:grid-cols-2">
         {/* Premiação + distância */}
