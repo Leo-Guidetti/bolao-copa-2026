@@ -133,7 +133,7 @@ export async function run({ prisma, dry = false, log = console.log }) {
     idx.get(norm(teamApp) + "|" + norm(name)) ||
     idxLast.get(norm(teamApp) + "|" + norm(name.split(" ").pop())) || null;
 
-  const finished = events.filter((e) => (e.finished || e.state === "in") && matchFor(e));
+  const finished = events.filter((e) => e.finished && matchFor(e));
   const playerMiss = new Set();
   let rows = 0;
   for (const ev of finished) {
@@ -193,7 +193,7 @@ export async function run({ prisma, dry = false, log = console.log }) {
     }
     log(`  ${m.homeTeam} x ${m.awayTeam}: ${targets.length} jogadores`);
   }
-  log(`${dry ? "[DRY] " : ""}Scout por jogo: ${rows} linhas em ${finished.length} jogos (ao vivo + encerrados).`);
+  log(`${dry ? "[DRY] " : ""}Scout por jogo: ${rows} linhas em ${finished.length} jogos encerrados.`);
   if (playerMiss.size) log(`Jogadores sem match (${playerMiss.size}) - ex: ${[...playerMiss].slice(0, 10).join(", ")}`);
 
   // ---- 3) RECOMPUTA TOTAIS + carimba o horário do último sync ----

@@ -25,7 +25,19 @@ export default function AdminPage() {
   const [tab, setTab] = useState("scoring");
   const [leigoBusy, setLeigoBusy] = useState(false);
   const [leigoMsg, setLeigoMsg] = useState("");
+  const [syncBusy, setSyncBusy] = useState(false);
+  const [syncMsg, setSyncMsg] = useState("");
   useEffect(() => { fetch("/api/me").then((r) => r.json()).then(setMe); }, []);
+
+  async function syncEspnNow() {
+    setSyncBusy(true); setSyncMsg("Puxando placares e parciais da ESPN…");
+    try {
+      const r = await fetch("/api/admin/sync", { method: "POST" });
+      const d = await r.json();
+      setSyncMsg(r.ok ? `✓ ${d.placares} placar(es) e ${d.scoutLinhas} linhas de scout em ${d.jogos} jogo(s).` : `❌ ${d.error || "erro"}`);
+    } catch { setSyncMsg("❌ falha/timeout — tente de novo em alguns segundos."); }
+    setSyncBusy(false);
+  }
 
   async function regenLeigo() {
     setLeigoBusy(true); setLeigoMsg("Gerando para todos… pode levar alguns segundos");
@@ -56,8 +68,10 @@ export default function AdminPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-bold tracking-tight">Admin</h1>
-        <button className="btn-ghost ml-auto" onClick={regenLeigo} disabled={leigoBusy}>{leigoBusy ? "Gerando…" : "🎤 Atualizar Leigo Master"}</button>
+        <button className="btn-ghost ml-auto" onClick={syncEspnNow} disabled={syncBusy}>{syncBusy ? "Atualizando…" : "🔄 Atualizar resultados"}</button>
+        <button className="btn-ghost" onClick={regenLeigo} disabled={leigoBusy}>{leigoBusy ? "Gerando…" : "🎤 Atualizar Leigo Master"}</button>
       </div>
+      {syncMsg && <p className="text-sm text-[var(--muted)]">{syncMsg}</p>}
       {leigoMsg && <p className="text-sm text-[var(--muted)]">{leigoMsg}</p>}
       <div className="flex flex-wrap gap-2">
         {TABS.map(([id, label]) => (
