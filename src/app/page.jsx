@@ -3,7 +3,7 @@ import { computeStandings } from "@/lib/standings";
 import { prisma } from "@/lib/prisma";
 import { flagUrl } from "@/lib/flags";
 import { STAGE_LABELS } from "@/lib/defaults";
-import Pitch from "@/components/Pitch";
+import ScoredPitch from "@/components/ScoredPitch";
 import LeigoMaster from "@/components/LeigoMaster";
 
 export const dynamic = "force-dynamic";
@@ -157,7 +157,7 @@ export default async function HomePage() {
                 </div>
               )}
               <div className="mt-3 max-w-[320px]">
-                <Pitch formation={squad.formation || "4-3-3"} starters={starters} reserves={reserves} camisa10Id={squad.captainId} />
+                <ScoredPitch formation={squad.formation || "4-3-3"} starters={starters} reserves={reserves} captainId={squad.captainId} scout={sq.scout} capMult={sq.camisa10Multiplier ?? 2} />
               </div>
             </>
           ) : (

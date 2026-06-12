@@ -15,19 +15,19 @@ function Avatar({ url, name, size = "h-7 w-7" }) {
   );
 }
 
-function CmpCard({ p, pts, win }) {
+function CmpCard({ p, pts, win, cap, capMult = 2 }) {
   if (!p) return <div className="card flex items-center justify-center p-1.5 text-xs text-[var(--faint)] opacity-50">—</div>;
   const flag = flagUrl(p.team);
   return (
-    <div className={`card flex items-center gap-1.5 p-1.5 ${win ? "ring-2 ring-brand" : ""}`}>
+    <div className={`card flex items-center gap-1.5 p-1.5 ${cap ? "ring-2 ring-accent" : win ? "ring-2 ring-brand" : ""}`}>
       <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--hover)]">
         {flag ? <img src={flag} alt="" className="h-full w-full object-cover" /> : null}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-xs font-medium leading-tight">{p.name}</span>
+        <span className="block truncate text-xs font-medium leading-tight">{p.name}{cap && <span className="ml-1 text-[9px] font-bold text-yellow-700">C10</span>}</span>
         <span className="block truncate text-[10px] text-[var(--faint)]">{p.position} · {p.team}</span>
       </span>
-      <span className={`shrink-0 text-sm font-bold tabular-nums ${pts < 0 ? "text-red-500" : win ? "text-brand-dark" : ""}`}>{pts.toFixed(1)}</span>
+      <span className={`flex shrink-0 items-center gap-0.5 text-sm font-bold tabular-nums ${cap ? "text-yellow-600" : pts < 0 ? "text-red-500" : win ? "text-brand-dark" : ""}`}>{pts.toFixed(1)}{cap && <span className="text-[8px] font-extrabold text-yellow-700">×{capMult}</span>}</span>
     </div>
   );
 }
@@ -116,8 +116,8 @@ export default function TimesPage() {
                     const aWin = pa != null && (pb == null || pa > pb), bWin = pb != null && (pa == null || pb > pa);
                     return (
                       <div key={idx} className="grid grid-cols-2 gap-2">
-                        <CmpCard p={r.a} pts={pa} win={aWin} />
-                        <CmpCard p={r.b} pts={pb} win={bWin} />
+                        <CmpCard p={r.a} pts={pa} win={aWin} cap={r.a?.id === mine.captainId} capMult={capMult} />
+                        <CmpCard p={r.b} pts={pb} win={bWin} cap={r.b?.id === opp.captainId} capMult={capMult} />
                       </div>
                     );
                   })}
@@ -159,7 +159,7 @@ export default function TimesPage() {
               <span className="ml-auto pill bg-brand-light text-brand-dark">{ptsTotal(cur).toFixed(1)} pts</span>
             </div>
             <div className="max-w-[340px]">
-              <Pitch formation={cur.formation} starters={cur.starters} reserves={cur.reserves} camisa10Id={cur.captainId}
+              <Pitch formation={cur.formation} starters={cur.starters} reserves={cur.reserves} camisa10Id={cur.captainId} capMult={capMult}
                 showPoints pointsOf={(pl) => playerScore(pl, scout) * (pl.id === cur.captainId ? capMult : 1)} />
             </div>
           </div>

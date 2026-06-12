@@ -26,7 +26,7 @@ function fillRow(types, pools) {
   });
 }
 
-export default function Pitch({ formation, starters = [], reserves = [], camisa10Id, onToggleCaptain, onRemove, showPoints, pointsOf }) {
+export default function Pitch({ formation, starters = [], reserves = [], camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPoints, pointsOf }) {
   const shape = FORMATIONS[formation] || FORMATIONS["4-3-3"];
 
   const pools = { GOL: [], ZAG: [], LAT: [], MEI: [], ATA: [] };
@@ -117,7 +117,7 @@ function Slot({ slot, camisa10Id, onToggleCaptain, onRemove, showPoints, pointsO
 
         {/* Pontuação parcial (mercado fechado) ou preço */}
         {showPoints && pointsOf ? (
-          <span className={`absolute -bottom-1.5 -right-1.5 flex h-4 items-center justify-center rounded-full px-1 text-[9px] font-bold text-white shadow ${pointsOf(player) < 0 ? "bg-red-500" : "bg-brand"}`} title="Pontuação parcial">{pointsOf(player).toFixed(1)}</span>
+          <span className={`absolute -bottom-1.5 -right-1.5 flex h-4 items-center justify-center gap-0.5 rounded-full px-1 text-[9px] font-bold shadow ${player.id === camisa10Id ? "bg-accent text-ink" : pointsOf(player) < 0 ? "bg-red-500 text-white" : "bg-brand text-white"}`} title={player.id === camisa10Id ? "Pontuação dobrada (camisa 10)" : "Pontuação parcial"}>{pointsOf(player).toFixed(1)}{player.id === camisa10Id && <span className="text-[7px] font-extrabold">×{capMult}</span>}</span>
         ) : (
           <span className="absolute -bottom-1.5 -right-1.5 flex h-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-ink shadow">{player.price}¢</span>
         )}
