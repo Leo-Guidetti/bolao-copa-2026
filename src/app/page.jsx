@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { flagUrl } from "@/lib/flags";
 import { STAGE_LABELS } from "@/lib/defaults";
 import { playerScore, scoreBreakdown } from "@/lib/scoring";
+import MatchCalendar from "@/components/MatchCalendar";
 import ScoredPitch from "@/components/ScoredPitch";
 import LeigoMaster from "@/components/LeigoMaster";
 
@@ -211,6 +212,8 @@ export default async function HomePage() {
           )}
         </section>
       </div>
+
+      <MatchCalendar />
 
       <section className="card p-5">
         <h2 className="font-semibold">Como funciona o bolão</h2>
