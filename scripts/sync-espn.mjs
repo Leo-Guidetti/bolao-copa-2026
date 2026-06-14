@@ -123,15 +123,36 @@ export async function run({ prisma, dry = false, log = console.log }) {
 
   // ---- 2) SCOUT COMPLETO POR JOGO (via API core) ----
   const players = await prisma.player.findMany();
-  const idx = new Map(), idxLast = new Map();
+  const byTeam = new Map();
   for (const p of players) {
-    idx.set(norm(p.team) + "|" + norm(p.name), p);
-    const parts = p.name.split(" ");
-    idxLast.set(norm(p.team) + "|" + norm(parts[parts.length - 1]), p);
+    const tn = norm(p.team);
+    if (!byTeam.has(tn)) byTeam.set(tn, []);
+    byTeam.get(tn).push({ p, full: norm(p.name), tokens: p.name.split(/\s+/).map(norm).filter(Boolean) });
   }
-  const find = (teamApp, name) =>
-    idx.get(norm(teamApp) + "|" + norm(name)) ||
-    idxLast.get(norm(teamApp) + "|" + norm(name.split(" ").pop())) || null;
+  const tokMatch = (a, b) => a.length >= 3 && b.length >= 3 && (a.startsWith(b) || b.startsWith(a));
+  // Casa o nome da ESPN com o jogador do banco (apelidos/nomes curtos), exigindo unicidade.
+  const find = (teamApp, name) => {
+    const list = byTeam.get(norm(teamApp));
+    if (!list || !list.length) return null;
+    const full = norm(name);
+    const toks = (name || "").split(/\s+/).map(norm).filter(Boolean);
+    const uniq = (arr) => (arr.length === 1 ? arr[0].p : null);
+    const exact = list.filter((x) => x.full && x.full === full);
+    if (exact.length) return exact[0].p;
+    let r = uniq(list.filter((x) => x.full && (x.full.includes(full) || full.includes(x.full))));
+    if (r) return r;
+    const last = toks[toks.length - 1] || "";
+    r = uniq(list.filter((x) => last && x.tokens[x.tokens.length - 1] === last));
+    if (r) return r;
+    r = uniq(list.filter((x) => {
+      const a = toks.filter((t) => t.length >= 3), b = x.tokens.filter((t) => t.length >= 3);
+      if (!a.length || !b.length) return false;
+      const [s, l] = a.length <= b.length ? [a, b] : [b, a];
+      return s.every((t) => l.some((u) => tokMatch(t, u)));
+    }));
+    if (r) return r;
+    return uniq(list.filter((x) => x.tokens.some((t) => t.length >= 4 && toks.some((u) => u.length >= 4 && tokMatch(t, u)))));
+  };
 
   const finished = events.filter((e) => e.finished && matchFor(e));
   const playerMiss = new Set();

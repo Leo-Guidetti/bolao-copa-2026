@@ -57,7 +57,7 @@ export default function IdealPage() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="mx-auto w-full max-w-[360px]">
-          <Pitch formation={formation} starters={starters} reserves={reserves} camisa10Id={null} showPoints pointsOf={ptsOf} />
+          <Pitch formation={formation} starters={starters} reserves={reserves} camisa10Id={null} showPoints pointsOf={ptsOf} onPlayer={setDetail} />
         </div>
         <div className="card p-4">
           <h2 className="mb-2 font-semibold">Escalação (titulares + reservas)</h2>

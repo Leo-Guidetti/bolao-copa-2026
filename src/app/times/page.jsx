@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Pitch from "@/components/Pitch";
 import LeigoMaster from "@/components/LeigoMaster";
+import PlayerStats from "@/components/PlayerStats";
 import { playerScore } from "@/lib/scoring";
 import { flagUrl } from "@/lib/flags";
 
@@ -15,11 +16,12 @@ function Avatar({ url, name, size = "h-7 w-7" }) {
   );
 }
 
-function CmpCard({ p, pts, win, cap, capMult = 2 }) {
+function CmpCard({ p, pts, win, cap, capMult = 2, onClick }) {
   if (!p) return <div className="card flex items-center justify-center p-1.5 text-xs text-[var(--faint)] opacity-50">—</div>;
   const flag = flagUrl(p.team);
   return (
-    <div className={`card flex items-center gap-1.5 p-1.5 ${cap ? "ring-2 ring-accent" : win ? "ring-2 ring-brand" : ""}`}>
+    <div onClick={onClick ? () => onClick(p) : undefined} title={onClick ? "Ver pontuação" : undefined}
+      className={`card flex cursor-pointer items-center gap-1.5 p-1.5 transition hover:bg-[var(--hover)] ${cap ? "ring-2 ring-accent" : win ? "ring-2 ring-brand" : ""}`}>
       <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--hover)]">
         {flag ? <img src={flag} alt="" className="h-full w-full object-cover" /> : null}
       </span>
@@ -38,6 +40,7 @@ export default function TimesPage() {
   const [rules, setRules] = useState(null);
   const [sel, setSel] = useState(0);
   const [compareId, setCompareId] = useState("");
+  const [detail, setDetail] = useState(null); // { player, captainId }
 
   useEffect(() => {
     fetch("/api/me").then((r) => r.json()).then(setMe);
@@ -72,9 +75,10 @@ export default function TimesPage() {
 
   return (
     <div className="space-y-6">
+      {detail && <PlayerStats player={detail.player} scout={scout} capMult={capMult} isCaptain={detail.player.id === detail.captainId} onClose={() => setDetail(null)} />}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Times dos competidores</h1>
-        <p className="mt-1 text-[var(--muted)]">Veja a seleção montada por cada um (somente leitura). Pontuação parcial atualiza a cada rodada.</p>
+        <p className="mt-1 text-[var(--muted)]">Veja a seleção montada por cada um (somente leitura). Toque num jogador pra ver os pontos. Atualiza a cada rodada.</p>
       </div>
 
       <LeigoMaster context="times" />
@@ -116,8 +120,8 @@ export default function TimesPage() {
                     const aWin = pa != null && (pb == null || pa > pb), bWin = pb != null && (pa == null || pb > pa);
                     return (
                       <div key={idx} className="grid grid-cols-2 gap-2">
-                        <CmpCard p={r.a} pts={pa} win={aWin} cap={r.a?.id === mine.captainId} capMult={capMult} />
-                        <CmpCard p={r.b} pts={pb} win={bWin} cap={r.b?.id === opp.captainId} capMult={capMult} />
+                        <CmpCard p={r.a} pts={pa} win={aWin} cap={r.a?.id === mine.captainId} capMult={capMult} onClick={(pl) => setDetail({ player: pl, captainId: mine.captainId })} />
+                        <CmpCard p={r.b} pts={pb} win={bWin} cap={r.b?.id === opp.captainId} capMult={capMult} onClick={(pl) => setDetail({ player: pl, captainId: opp.captainId })} />
                       </div>
                     );
                   })}
@@ -160,7 +164,7 @@ export default function TimesPage() {
             </div>
             <div className="max-w-[340px]">
               <Pitch formation={cur.formation} starters={cur.starters} reserves={cur.reserves} camisa10Id={cur.captainId} capMult={capMult}
-                showPoints pointsOf={(pl) => playerScore(pl, scout) * (pl.id === cur.captainId ? capMult : 1)} />
+                showPoints pointsOf={(pl) => playerScore(pl, scout) * (pl.id === cur.captainId ? capMult : 1)} onPlayer={(pl) => setDetail({ player: pl, captainId: cur.captainId })} />
             </div>
           </div>
         </div>
