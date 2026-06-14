@@ -10,7 +10,7 @@ export default function Loading() {
     <div className="flex min-h-[55vh] flex-col items-center justify-center gap-3">
       <div className="lg-track">
         {imgOk ? (
-          <img src="/trionda.png" alt="Carregando" className="lg-ball rounded-full object-cover" onError={() => setImgOk(false)} />
+          <img src="/trionda.webp" alt="Carregando" className="lg-ball rounded-full object-cover" onError={() => setImgOk(false)} />
         ) : (
           <svg className="lg-ball" viewBox="0 0 100 100" role="img" aria-label="Carregando" xmlns="http://www.w3.org/2000/svg">
             <circle cx="50" cy="50" r="47" fill="#ffffff" stroke="#0b0f14" strokeOpacity="0.15" strokeWidth="1.5" />
