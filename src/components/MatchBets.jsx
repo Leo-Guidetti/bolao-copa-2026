@@ -70,14 +70,12 @@ export default function MatchBets({ match, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="card max-h-[85vh] w-full max-w-md space-y-3 overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start gap-2">
-          <div className="flex flex-1 items-center gap-2 text-sm font-semibold">
-            <div className="min-w-0 flex-1"><TeamTag team={match.homeTeam} align="right" /></div>
-            <span className="shrink-0 tabular-nums">{match.finished ? `${match.homeScore} × ${match.awayScore}` : "×"}</span>
-            <div className="min-w-0 flex-1"><TeamTag team={match.awayTeam} /></div>
-          </div>
-          <button onClick={onClose} aria-label="Fechar" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--hover)] text-[var(--muted)]">×</button>
+      <div className="card relative max-h-[85vh] w-full max-w-md space-y-3 overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} aria-label="Fechar" className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-[var(--hover)] text-[var(--muted)]">×</button>
+        <div className="flex items-center gap-2 px-7 text-sm font-semibold">
+          <div className="min-w-0 flex-1"><TeamTag team={match.homeTeam} align="right" /></div>
+          <span className="shrink-0 tabular-nums">{match.finished ? `${match.homeScore} × ${match.awayScore}` : "×"}</span>
+          <div className="min-w-0 flex-1"><TeamTag team={match.awayTeam} /></div>
         </div>
 
         {!data ? (
