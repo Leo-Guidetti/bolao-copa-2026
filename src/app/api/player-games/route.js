@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getSetting } from "@/lib/config";
+import { getSquadLock } from "@/lib/locks";
 import { playerScore, scoreBreakdown } from "@/lib/scoring";
 
 // GET /api/player-games?playerId=... -> desempenho do jogador JOGO A JOGO (stats + pontos por partida).
@@ -26,7 +27,22 @@ export async function GET(req) {
     .filter((g) => g.minutes > 0 || g.points !== 0 || g.breakdown.length > 0)
     .sort((a, b) => new Date(b.kickoff) - new Date(a.kickoff));
 
-  return Response.json({ position: pos, games });
+  // Quem escalou esse jogador (revelado só com o mercado fechado, mesma regra dos times).
+  const lock = await getSquadLock();
+  let owners = [];
+  if (lock.locked) {
+    const squads = await prisma.squad.findMany({
+      where: { players: { some: { playerId } } },
+      include: { participant: true, players: { where: { playerId } } },
+    });
+    owners = squads.map((sq) => ({
+      name: sq.participant?.name || "—",
+      captain: sq.captainId === playerId,
+      starter: sq.players[0]?.isStarter ?? true,
+    })).sort((a, b) => (b.captain === a.captain ? a.name.localeCompare(b.name) : b.captain ? 1 : -1));
+  }
+
+  return Response.json({ position: pos, games, owners, ownersLocked: lock.locked });
 }
 
 export const dynamic = "force-dynamic";

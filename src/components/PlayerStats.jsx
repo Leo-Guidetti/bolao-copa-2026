@@ -9,10 +9,13 @@ const fmt = (n) => Number((n || 0).toFixed(1)).toString();
 // Modal com a pontuação do jogador JOGO A JOGO (stats + pontos de cada partida) + total.
 export default function PlayerStats({ player, scout, capMult = 1, isCaptain = false, onClose }) {
   const [data, setData] = useState(null);
+  const [owners, setOwners] = useState(null);
   useEffect(() => {
     if (!player) return;
-    setData(null);
-    fetch(`/api/player-games?playerId=${player.id}`).then((r) => r.json()).then((d) => setData(d.games || [])).catch(() => setData([]));
+    setData(null); setOwners(null);
+    fetch(`/api/player-games?playerId=${player.id}`).then((r) => r.json())
+      .then((d) => { setData(d.games || []); setOwners(d.owners || []); })
+      .catch(() => { setData([]); setOwners([]); });
   }, [player?.id]);
   if (!player) return null;
 
@@ -37,6 +40,23 @@ export default function PlayerStats({ player, scout, capMult = 1, isCaptain = fa
           </div>
           <button onClick={onClose} aria-label="Fechar" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--hover)] text-[var(--muted)]">×</button>
         </div>
+
+        {owners && (
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--faint)]">Escalado por ({owners.length})</div>
+            {owners.length === 0 ? (
+              <p className="mt-1 text-xs text-[var(--faint)]">Ninguém escalou esse jogador.</p>
+            ) : (
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {owners.map((o, i) => (
+                  <span key={i} className={`pill text-xs ${o.captain ? "bg-accent/20 font-semibold text-yellow-700" : "bg-[var(--hover)] text-[var(--muted)]"}`}>
+                    {o.name}{o.captain ? " · C10" : ""}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--faint)]">Por jogo</div>
         {data === null ? (
