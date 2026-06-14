@@ -50,10 +50,8 @@ export default function Nav() {
       <nav className="mx-auto flex w-full max-w-5xl items-center gap-2 px-3 py-2.5 sm:px-4">
         <button onClick={() => setOpen(true)} aria-label="Abrir menu"
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xl hover:bg-[var(--hover)]">☰</button>
-        <Link href="/" className="flex shrink-0 items-center gap-1.5 font-semibold tracking-tight">
-          <img src="/icon-192.png" alt="Leigos da Bola" className="h-6 w-6 rounded-md" />
-          <span className="hidden sm:inline">Leigos da Bola</span>
-          <span className="hidden text-brand sm:inline">| Copa 2026</span>
+        <Link href="/" className="flex shrink-0 items-center" aria-label="Leigos da Bola | Copa 2026">
+          <img src="/icon-192.png" alt="Leigos da Bola" className="h-9 w-9 rounded-md sm:h-10 sm:w-10" />
         </Link>
         <div className="ml-auto flex items-center gap-1">
           {session?.user ? (
