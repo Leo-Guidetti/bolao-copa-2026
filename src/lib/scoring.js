@@ -126,7 +126,8 @@ export function combinedRanking(rows, ranking) {
       const squadPct = r.squadPts / maxSquad;
       return { ...r, betPct, squadPct, final };
     })
-    .sort((a, b) => b.final - a.final)
+    // Desempate: 1º) maior pontuação de seleção; 2º) maior pontuação de placar.
+    .sort((a, b) => b.final - a.final || b.squadPts - a.squadPts || b.betPts - a.betPts)
     .map((r, i) => ({ ...r, place: i + 1 }));
 }
 
