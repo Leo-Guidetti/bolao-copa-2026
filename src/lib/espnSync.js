@@ -67,7 +67,7 @@ function parseEvent(e) {
   };
 }
 
-export async function syncEspn({ prisma, sinceDays = null, includeLive = false, dry = false, log = () => {}, concurrency = 8 }) {
+export async function syncEspn({ prisma, sinceDays = null, includeLive = false, dry = false, log = () => {}, concurrency = 8, scoresOnly = false }) {
   const dates = dateList(sinceDays);
   const byId = new Map();
   for (const dt of dates) {
@@ -96,7 +96,10 @@ export async function syncEspn({ prisma, sinceDays = null, includeLive = false, 
     }
   }
 
-  // ---- scout por jogador ----
+  // ---- scout por jogador (pulado no modo scoresOnly: só placares/ao vivo) ----
+  let scoutLinhas = 0, target = [];
+  const semMatch = new Set();
+  if (!scoresOnly) {
   const players = await prisma.player.findMany();
   const byTeam = new Map();
   for (const p of players) {
@@ -134,8 +137,7 @@ export async function syncEspn({ prisma, sinceDays = null, includeLive = false, 
     return uniq(list.filter((x) => x.tokens.some((t) => t.length >= 4 && toks.some((u) => u.length >= 4 && tokMatch(t, u)))));
   };
 
-  const target = events.filter((e) => (e.finished || (includeLive && e.state === "in")) && matchFor(e));
-  let scoutLinhas = 0; const semMatch = new Set();
+  target = events.filter((e) => (e.finished || (includeLive && e.state === "in")) && matchFor(e));
   for (const ev of target) {
     const m = matchFor(ev);
     let sum;
@@ -180,9 +182,10 @@ export async function syncEspn({ prisma, sinceDays = null, includeLive = false, 
       }
     }
   }
+  } // fim do bloco scoresOnly (scout)
 
   if (!dry) {
-    await recomputeTotals(prisma);
+    if (!scoresOnly) await recomputeTotals(prisma);
     await prisma.setting.upsert({
       where: { key: "lastSyncAt" },
       update: { value: JSON.stringify(new Date().toISOString()) },
