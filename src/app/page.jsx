@@ -216,13 +216,12 @@ export default async function HomePage() {
           {prizes.map((pz) => {
             const r = ranked[pz.place - 1];
             const isMe = r && r.participantId === me.id;
-            const above = pz.place > 1 ? ranked[pz.place - 2] : null;
-            const gap = above && r ? above.final - r.final : null;
+            const need = r && !isMe ? r.final - myRow.final : null; // quanto EU preciso pra passar esse
             return (
               <div key={pz.place} className={`flex items-center gap-2 py-2 ${isMe ? "font-semibold text-brand-dark" : ""}`}>
                 <span className="w-7 text-lg">{medal[pz.place - 1] || `${pz.place}º`}</span>
                 <span className="flex-1 truncate">{r ? r.name : "—"} {isMe && <span className="pill bg-brand-light text-brand-dark">você</span>}</span>
-                <span className="tabular-nums text-[var(--muted)]">{r ? r.final.toFixed(1) : "—"} pts{gap != null && <span className="ml-1 text-[10px] font-normal text-[var(--faint)]">({gap === 0 ? "=" : `-${gap.toFixed(1)}`})</span>}</span>
+                <span className="tabular-nums text-[var(--muted)]">{r ? r.final.toFixed(1) : "—"} pts{need != null && need > 0 && <span className="ml-1 text-[10px] font-normal text-[var(--faint)]">(-{need.toFixed(1)})</span>}</span>
                 <span className="w-24 text-right tabular-nums text-brand-dark">{brl(pz.amount)}</span>
               </div>
             );
