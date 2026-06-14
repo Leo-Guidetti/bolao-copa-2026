@@ -1,18 +1,27 @@
-// Tela de carregamento mostrada automaticamente ao trocar de página (App Router).
-// Bola tricolor (branca + vermelho/azul/verde) no espírito da bola da Copa 2026.
+"use client";
+
+import { useState } from "react";
+
+// Tela de carregamento mostrada automaticamente ao trocar de página.
+// Usa /trionda.png (recortada em círculo) se existir; senão, cai na bola SVG tricolor.
 export default function Loading() {
+  const [imgOk, setImgOk] = useState(true);
   return (
     <div className="flex min-h-[55vh] flex-col items-center justify-center gap-3">
       <div className="lg-track">
-        <svg className="lg-ball" viewBox="0 0 100 100" role="img" aria-label="Carregando" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="50" cy="50" r="47" fill="#ffffff" stroke="#0b0f14" strokeOpacity="0.15" strokeWidth="1.5" />
-          <g>
-            <ellipse cx="50" cy="26" rx="12.5" ry="19" fill="#e4002b" />
-            <ellipse cx="50" cy="26" rx="12.5" ry="19" fill="#0057b7" transform="rotate(120 50 50)" />
-            <ellipse cx="50" cy="26" rx="12.5" ry="19" fill="#16a34a" transform="rotate(240 50 50)" />
-          </g>
-          <circle cx="50" cy="50" r="6.5" fill="#ffffff" stroke="#0b0f14" strokeOpacity="0.18" strokeWidth="1.2" />
-        </svg>
+        {imgOk ? (
+          <img src="/trionda.png" alt="Carregando" className="lg-ball rounded-full object-cover" onError={() => setImgOk(false)} />
+        ) : (
+          <svg className="lg-ball" viewBox="0 0 100 100" role="img" aria-label="Carregando" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="47" fill="#ffffff" stroke="#0b0f14" strokeOpacity="0.15" strokeWidth="1.5" />
+            <g>
+              <ellipse cx="50" cy="26" rx="12.5" ry="19" fill="#e4002b" />
+              <ellipse cx="50" cy="26" rx="12.5" ry="19" fill="#0057b7" transform="rotate(120 50 50)" />
+              <ellipse cx="50" cy="26" rx="12.5" ry="19" fill="#16a34a" transform="rotate(240 50 50)" />
+            </g>
+            <circle cx="50" cy="50" r="6.5" fill="#ffffff" stroke="#0b0f14" strokeOpacity="0.18" strokeWidth="1.2" />
+          </svg>
+        )}
       </div>
       <p className="animate-pulse text-sm font-medium text-[var(--muted)]">Carregando…</p>
       <style>{`
