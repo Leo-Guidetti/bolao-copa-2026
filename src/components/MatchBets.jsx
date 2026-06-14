@@ -48,12 +48,18 @@ export default function MatchBets({ match, onClose }) {
         ) : (
           <ul className="divide-y divide-[var(--border)]">
             {data.bets.map((b, i) => (
-              <li key={i} className="flex items-center gap-2 py-1.5 text-sm">
+              <li key={i} className={`flex items-center gap-2 py-1.5 text-sm ${b.noBet ? "opacity-40" : ""}`}>
                 <span className="w-5 text-center text-xs font-bold text-[var(--faint)]">{i + 1}</span>
                 <span className="min-w-0 flex-1 truncate font-medium">{b.name}</span>
-                <span className="tabular-nums text-[var(--muted)]">{b.homeGuess}×{b.awayGuess}</span>
-                {b.points != null && (
-                  <span className={`pill font-bold ${b.points > 0 ? "bg-brand-light text-brand-dark" : "bg-[var(--hover)] text-[var(--muted)]"}`}>{fmtPts(b.points)} pts</span>
+                {b.noBet ? (
+                  <span className="text-xs italic text-[var(--faint)]">sem palpite</span>
+                ) : (
+                  <>
+                    <span className="tabular-nums text-[var(--muted)]">{b.homeGuess}×{b.awayGuess}</span>
+                    {b.points != null && (
+                      <span className={`pill font-bold ${b.points > 0 ? "bg-brand-light text-brand-dark" : "bg-[var(--hover)] text-[var(--muted)]"}`}>{fmtPts(b.points)} pts</span>
+                    )}
+                  </>
                 )}
               </li>
             ))}

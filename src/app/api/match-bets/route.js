@@ -16,13 +16,20 @@ export async function GET(req) {
   if (!locked) return Response.json({ locked: false, bets: [] });
 
   const scoring = await getSetting("scoring");
-  const bets = await prisma.bet.findMany({ where: { matchId }, include: { participant: true } });
-  const rows = bets.map((b) => ({
-    name: b.participant.name,
-    homeGuess: b.homeGuess,
-    awayGuess: b.awayGuess,
-    points: match.finished ? betPoints(b, match, scoring) : null,
-  })).sort((a, b) => (b.points || 0) - (a.points || 0) || a.name.localeCompare(b.name));
+  const [participants, bets] = await Promise.all([
+    prisma.participant.findMany({ select: { id: true, name: true } }),
+    prisma.bet.findMany({ where: { matchId } }),
+  ]);
+  const byP = new Map(bets.map((b) => [b.participantId, b]));
+  const rows = participants.map((p) => {
+    const b = byP.get(p.id);
+    if (!b) return { name: p.name, noBet: true };
+    return { name: p.name, homeGuess: b.homeGuess, awayGuess: b.awayGuess, points: match.finished ? betPoints(b, match, scoring) : null, noBet: false };
+  }).sort((a, b) => {
+    if (a.noBet !== b.noBet) return a.noBet ? 1 : -1;             // quem palpitou primeiro
+    if (a.noBet) return a.name.localeCompare(b.name);             // sem palpite em ordem alfabética
+    return (b.points || 0) - (a.points || 0) || a.name.localeCompare(b.name);
+  });
 
   return Response.json({ locked: true, finished: match.finished, bets: rows });
 }
