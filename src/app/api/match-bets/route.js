@@ -34,7 +34,9 @@ export async function GET(req) {
   const gArr = [...groups.values()].map((g) => ({
     ...g, count: g.names.length, total: g.hg + g.ag,
     points: match.finished ? betPoints({ homeGuess: g.hg, awayGuess: g.ag }, match, scoring) : null,
-  })).sort((a, b) => b.count - a.count || b.total - a.total || a.hg - b.hg || a.ag - b.ag);
+  })).sort((a, b) => (match.finished
+    ? ((b.points || 0) - (a.points || 0) || b.count - a.count || b.total - a.total)
+    : (b.count - a.count || b.total - a.total)) || a.hg - b.hg || a.ag - b.ag);
 
   const rows = [];
   for (const g of gArr) {

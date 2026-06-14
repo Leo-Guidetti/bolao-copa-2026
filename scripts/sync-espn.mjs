@@ -187,6 +187,8 @@ export async function run({ prisma, dry = false, log = console.log }) {
       const onTarget = cval(cats, "offensive", "shotsOnTarget");
       const totalShots = cval(cats, "offensive", "totalShots");
       const gls = cval(cats, "offensive", "totalGoals");
+      // "Sem sofrer gol" olha o PLACAR DO JOGO (o time sofreu gol ou não), não o stat individual.
+      const teamConceded = (norm(p.team) === norm(ev.homeApp)) ? ev.awayScore : ev.homeScore;
       const data = {
         goals: gls,
         assists: cval(cats, "offensive", "goalAssists"),
@@ -201,7 +203,7 @@ export async function run({ prisma, dry = false, log = console.log }) {
         red: cval(cats, "general", "redCards"),
         ownGoals: cval(cats, "general", "ownGoals"),
         minutes,
-        cleanSheet: (minutes > 0 && conceded === 0 && ["GOL", "ZAG", "LAT"].includes(p.position)) ? 1 : 0,
+        cleanSheet: (minutes > 0 && teamConceded === 0 && ["GOL", "ZAG", "LAT"].includes(p.position)) ? 1 : 0,
         goalsConceded: p.position === "GOL" ? conceded : 0,
       };
       rows++;
