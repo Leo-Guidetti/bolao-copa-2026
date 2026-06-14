@@ -8,6 +8,8 @@ import { broadcastersFor } from "@/lib/broadcast";
 const WD = ["D", "S", "T", "Q", "Q", "S", "S"];
 const fmtTime = (d) => new Date(d).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
 const dayKey = (d) => new Date(d).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+// Dia "lógico" do jogo: madrugada até 4h (BRT) conta como o dia anterior.
+const matchDay = (d) => new Date(new Date(d).getTime() - 4 * 3600 * 1000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 
 function Flag({ t }) {
   const u = flagUrl(t);
@@ -23,7 +25,7 @@ export default function MatchCalendar() {
     fetch("/api/matches").then((r) => r.json()).then((ms) => {
       setMatches(ms);
       const today = dayKey(new Date());
-      const days = ms.map((m) => dayKey(m.kickoff)).sort();
+      const days = ms.map((m) => matchDay(m.kickoff)).sort();
       const start = days.find((d) => d >= today) || days[0] || today;
       const [y, mo] = start.split("-").map(Number);
       setCursor({ y, m: mo - 1 });
@@ -33,7 +35,7 @@ export default function MatchCalendar() {
 
   const byDay = useMemo(() => {
     const map = {};
-    for (const m of matches) (map[dayKey(m.kickoff)] ||= []).push(m);
+    for (const m of matches) (map[matchDay(m.kickoff)] ||= []).push(m);
     for (const k in map) map[k].sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
     return map;
   }, [matches]);

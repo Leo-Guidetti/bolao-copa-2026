@@ -7,7 +7,8 @@ export const VERSION = 6;
 export const VALID = ["home", "palpites", "selecao", "ranking", "times"];
 
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
-const dayOf = (d) => new Date(d).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+// Dia "lógico" do jogo: madrugada até 4h (BRT) conta como o dia anterior.
+const dayOf = (d) => new Date(new Date(d).getTime() - 4 * 3600 * 1000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 const tomorrowStr = () => new Date(Date.now() + 24 * 3600 * 1000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 const yesterdayStr = () => new Date(Date.now() - 24 * 3600 * 1000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 const fmtPts = (n) => Number((n || 0).toFixed(1)).toString();

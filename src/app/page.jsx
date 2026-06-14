@@ -54,7 +54,8 @@ export default async function HomePage() {
   const squadOver = !!squad && squadCost > budgetCap;
 
   // Craque do dia: melhor jogador (por pontos no jogo) dos jogos de ONTEM.
-  const dayOf = (d) => new Date(d).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  // Dia "lógico" do jogo: madrugada até 4h (BRT) conta como o dia anterior.
+  const dayOf = (d) => new Date(new Date(d).getTime() - 4 * 3600 * 1000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
   const ydStr = new Date(Date.now() - 86400000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
   const allMatches = await prisma.match.findMany({ where: { finished: true } });
   const ydMatchIds = allMatches.filter((m) => dayOf(m.kickoff) === ydStr).map((m) => m.id);

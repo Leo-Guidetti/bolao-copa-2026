@@ -10,6 +10,8 @@ import MatchBets from "@/components/MatchBets";
 const fmtPts = (n) => n.toFixed(n % 1 === 0 ? 0 : 1);
 
 const KO_ORDER = ["R32", "R16", "QF", "SF", "THIRD", "FINAL"];
+// Dia "lógico" do jogo: madrugada até 4h (BRT) conta como o dia anterior.
+const matchDay = (d) => new Date(new Date(d).getTime() - 4 * 3600 * 1000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 function fmtDate(m) {
   return new Date(m.kickoff).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
@@ -128,8 +130,11 @@ export default function ApostasPage() {
     const arr = matches.slice().sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
     const days = []; let cur = null;
     for (const m of arr) {
-      const day = new Date(m.kickoff).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "short", day: "2-digit", month: "2-digit" });
-      if (!cur || cur.day !== day) { cur = { day, items: [] }; days.push(cur); }
+      const key = matchDay(m.kickoff);
+      if (!cur || cur.key !== key) {
+        const day = new Date(key + "T12:00:00Z").toLocaleDateString("pt-BR", { timeZone: "UTC", weekday: "short", day: "2-digit", month: "2-digit" });
+        cur = { key, day, items: [] }; days.push(cur);
+      }
       cur.items.push(m);
     }
     return days;
