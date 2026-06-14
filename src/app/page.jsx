@@ -207,7 +207,7 @@ export default async function HomePage() {
           {inPrize ? (
             <>Você está <b>premiado</b> em {myRow.place}º {prizeByPlace[myRow.place] ? `(${brl(prizeByPlace[myRow.place])})` : ""}! Segura aí. 🏅</>
           ) : cut ? (
-            <>Faltam <b>{gapToCut.toFixed(1)} pts</b> para entrar na zona de premiação (passar o {N}º).{ahead ? <> A {gapToAhead.toFixed(1)} pt(s) do {myRow.place - 1}º (<b>{ahead.name}</b>).</> : null}</>
+            <>Faltam <b>{gapToCut.toFixed(1)} pts</b> para entrar na zona de premiação (passar o {N}º).</>
           ) : (
             <>Ainda sem premiação definida.</>
           )}
@@ -216,11 +216,13 @@ export default async function HomePage() {
           {prizes.map((pz) => {
             const r = ranked[pz.place - 1];
             const isMe = r && r.participantId === me.id;
+            const above = pz.place > 1 ? ranked[pz.place - 2] : null;
+            const gap = above && r ? above.final - r.final : null;
             return (
               <div key={pz.place} className={`flex items-center gap-2 py-2 ${isMe ? "font-semibold text-brand-dark" : ""}`}>
                 <span className="w-7 text-lg">{medal[pz.place - 1] || `${pz.place}º`}</span>
                 <span className="flex-1 truncate">{r ? r.name : "—"} {isMe && <span className="pill bg-brand-light text-brand-dark">você</span>}</span>
-                <span className="tabular-nums text-[var(--muted)]">{r ? r.final.toFixed(1) : "—"} pts</span>
+                <span className="tabular-nums text-[var(--muted)]">{r ? r.final.toFixed(1) : "—"} pts{gap != null && <span className="ml-1 text-[10px] font-normal text-[var(--faint)]">({gap === 0 ? "=" : `-${gap.toFixed(1)}`})</span>}</span>
                 <span className="w-24 text-right tabular-nums text-brand-dark">{brl(pz.amount)}</span>
               </div>
             );
