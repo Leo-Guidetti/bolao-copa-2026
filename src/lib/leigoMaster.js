@@ -3,7 +3,7 @@ import { betPoints, playerScore } from "@/lib/scoring";
 import { getSetting } from "@/lib/config";
 import { computeStandings } from "@/lib/standings";
 
-export const VERSION = 5;
+export const VERSION = 6;
 export const VALID = ["home", "palpites", "selecao", "ranking", "times"];
 
 const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
@@ -108,7 +108,7 @@ async function callOpenAI(prompt) {
   return text;
 }
 
-const BASE = `Você é o "Leigo Master", o comentarista mais zoeiro e POUCO CONFIÁVEL de um bolão da Copa do Mundo 2026 entre amigos brasileiros. Você é propositalmente contraditório (elogia e detona a mesma escolha, muda de ideia no meio, solta "previsões" duvidosas com toda a confiança) — deixe claro pelo exagero que é só resenha e ninguém deve te levar a sério. Tom: deboche leve e carinhoso, gírias de futebol, SEM ofensa pesada e SEM palavrão forte. Escreva em português do Brasil correto e coerente, CURTO: no máximo ~70 palavras (cabe num cartãozinho de app), 1 ou 2 emojis no máximo. Vá direto ao ponto, sem enrolação. NÃO use markdown, asteriscos, títulos nem listas — só texto corrido. Não invente dados além dos fornecidos.`;
+const BASE = `Você é o "Leigo Master", um comentarista de futebol no estilo do Craque Neto comentando um bolão da Copa do Mundo 2026 entre amigos brasileiros. Tom: bombástico, dramático, MUITO opinativo e empolgado, com bordões e exagero (ex.: "Pô, meu amigo!", "Vou te falar uma coisa...", "Isso é um ABSURDO!", "joga DEMAIS!", "escuta o que eu tô falando"). Você ACOMPANHA a competição: comenta placares, zebras, quem brilhou e quem decepcionou, e crava prognósticos com convicção total. Exalta e detona com paixão, mas SEM ofensa pesada e SEM palavrão. É resenha de amigo — o exagero deixa claro que é zoeira. Português do Brasil correto e coerente. CURTO: no máximo ~70 palavras, 1 ou 2 emojis. Texto corrido, SEM markdown, asteriscos, títulos ou listas. IMPORTANTíSSIMO: use SOMENTE os dados fornecidos abaixo — não invente jogos, placares, nomes nem fatos que não estejam aqui.`;
 
 async function buildPrompt(me, ctx) {
   const [bets, matches, squad] = await Promise.all([
@@ -124,6 +124,24 @@ async function buildPrompt(me, ctx) {
     const cost = squad.players.reduce((s, p) => s + (p.player.price || 0), 0);
     return `Formação ${squad.formation || "4-3-3"}, custo ${cost}¢, camisa 10 ${capP ? capP.name : "nenhum"}. Titulares: ${st.join("; ")}.`;
   };
+
+  if (ctx === "home") {
+    const ydStr = yesterdayStr(), tdStr = today();
+    const byMatch = Object.fromEntries(bets.map((b) => [b.matchId, b]));
+    const sc = await getSetting("scoring");
+    const yd = matches.filter((m) => dayOf(m.kickoff) === ydStr && m.finished).sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+    const td = matches.filter((m) => dayOf(m.kickoff) === tdStr).sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+    const ydLines = yd.map((m) => {
+      const b = byMatch[m.id];
+      const meTxt = b ? `(${me.name} palpitou ${b.homeGuess}x${b.awayGuess}, fez ${fmtPts(betPoints(b, m, sc))} pts)` : `(${me.name} ficou SEM PALPITE)`;
+      return `${m.homeTeam} ${m.homeScore}x${m.awayScore} ${m.awayTeam} ${meTxt}`;
+    });
+    const tdLines = td.map((m) => { const b = byMatch[m.id]; return `${m.homeTeam} x ${m.awayTeam}${b ? ` (palpite dele: ${b.homeGuess}x${b.awayGuess})` : " (ele ainda NÃO palpitou)"}`; });
+    const parts = [];
+    parts.push(yd.length ? `JOGOS DE ONTEM (resultados reais) e como ${me.name} se saiu:\n${ydLines.join("\n")}` : "Ontem não teve jogo encerrado da Copa.");
+    parts.push(td.length ? `JOGOS DE HOJE e os palpites de ${me.name}:\n${tdLines.join("\n")}` : "Hoje não tem jogo da Copa.");
+    return `${BASE}\n\nVocê está comentando para ${me.name}. FALE APENAS sobre ONTEM e HOJE — nada de rodadas antigas ou de dias futuros.\n\n${parts.join("\n\n")}\n\nComente os destaques dos jogos de ONTEM (zebras, goleadas, quem brilhou) e como ${me.name} foi nos palpites; depois esquente os jogos de HOJE com um prognóstico bem convicto. Curtíssimo, no estilo Craque Neto:`;
+  }
 
   if (ctx === "ranking" || ctx === "times") {
     const { ranked } = await standingsCached();
