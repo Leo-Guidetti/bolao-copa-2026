@@ -21,17 +21,37 @@ export async function GET(req) {
     prisma.bet.findMany({ where: { matchId } }),
   ]);
   const byP = new Map(bets.map((b) => [b.participantId, b]));
-  const rows = participants.map((p) => {
-    const b = byP.get(p.id);
-    if (!b) return { name: p.name, noBet: true };
-    return { name: p.name, homeGuess: b.homeGuess, awayGuess: b.awayGuess, points: match.finished ? betPoints(b, match, scoring) : null, noBet: false };
-  }).sort((a, b) => {
-    if (a.noBet !== b.noBet) return a.noBet ? 1 : -1;             // quem palpitou primeiro
-    if (a.noBet) return a.name.localeCompare(b.name);             // sem palpite em ordem alfabética
-    return (b.points || 0) - (a.points || 0) || a.name.localeCompare(b.name);
-  });
 
-  return Response.json({ locked: true, finished: match.finished, bets: rows });
+  // Agrupa por placar igual; ordena por mais palpitado, depois por mais gols no total.
+  const groups = new Map();
+  for (const p of participants) {
+    const b = byP.get(p.id);
+    if (!b) continue;
+    const key = `${b.homeGuess}-${b.awayGuess}`;
+    if (!groups.has(key)) groups.set(key, { hg: b.homeGuess, ag: b.awayGuess, names: [] });
+    groups.get(key).names.push(p.name);
+  }
+  const gArr = [...groups.values()].map((g) => ({
+    ...g, count: g.names.length, total: g.hg + g.ag,
+    points: match.finished ? betPoints({ homeGuess: g.hg, awayGuess: g.ag }, match, scoring) : null,
+  })).sort((a, b) => b.count - a.count || b.total - a.total || a.hg - b.hg || a.ag - b.ag);
+
+  const rows = [];
+  for (const g of gArr) {
+    g.names.sort((a, b) => a.localeCompare(b));
+    for (const n of g.names) rows.push({ name: n, homeGuess: g.hg, awayGuess: g.ag, points: g.points, noBet: false });
+  }
+  // quem não palpitou vai pro fim
+  for (const p of participants.filter((p) => !byP.has(p.id)).sort((a, b) => a.name.localeCompare(b.name))) {
+    rows.push({ name: p.name, noBet: true });
+  }
+
+  // distribuição de resultado (mandante / empate / visitante) entre quem palpitou
+  let home = 0, draw = 0, away = 0;
+  for (const b of bets) { if (b.homeGuess > b.awayGuess) home++; else if (b.homeGuess < b.awayGuess) away++; else draw++; }
+  const dist = { home, draw, away, total: bets.length };
+
+  return Response.json({ locked: true, finished: match.finished, bets: rows, dist });
 }
 
 export const dynamic = "force-dynamic";
