@@ -91,6 +91,19 @@ export default function PerfilPage() {
         </div>
       </section>
 
+      {me.isAdmin && (
+        <a href="/admin" className="card flex items-center justify-between gap-3 p-5 transition hover:bg-[var(--hover)]">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🛠️</span>
+            <div>
+              <div className="font-semibold">Painel do Admin</div>
+              <div className="text-sm text-[var(--muted)]">Atualizar resultados, stats dos jogos e participantes</div>
+            </div>
+          </div>
+          <span className="text-lg text-brand">→</span>
+        </a>
+      )}
+
       <section className="card space-y-3 p-6">
         <h2 className="font-semibold">Alterar senha</h2>
         <input type="password" className="input" placeholder="Senha atual" value={cur} onChange={(e) => setCur(e.target.value)} />

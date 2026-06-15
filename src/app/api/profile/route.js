@@ -1,11 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { currentParticipant } from "@/lib/session";
+import { isAdminEmail } from "@/lib/auth-options";
 import bcrypt from "bcryptjs";
 
 export async function GET() {
   const p = await currentParticipant();
   if (!p) return Response.json(null);
-  return Response.json({ id: p.id, name: p.name, email: p.email, avatarUrl: p.avatarUrl });
+  return Response.json({ id: p.id, name: p.name, email: p.email, avatarUrl: p.avatarUrl, isAdmin: isAdminEmail(p.email) });
 }
 
 export async function PATCH(req) {

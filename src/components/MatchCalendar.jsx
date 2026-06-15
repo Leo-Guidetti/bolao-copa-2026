@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { flagUrl, teamAbbr } from "@/lib/flags";
 import { STAGE_LABELS } from "@/lib/defaults";
 import { broadcastersFor } from "@/lib/broadcast";
+import { betPoints } from "@/lib/scoring";
 
 const WD = ["D", "S", "T", "Q", "Q", "S", "S"];
 const fmtTime = (d) => new Date(d).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
@@ -20,8 +21,12 @@ export default function MatchCalendar() {
   const [matches, setMatches] = useState([]);
   const [cursor, setCursor] = useState(null); // { y, m }
   const [sel, setSel] = useState(null); // "YYYY-MM-DD"
+  const [bets, setBets] = useState({});
+  const [scoring, setScoring] = useState(null);
 
   useEffect(() => {
+    fetch("/api/bets").then((r) => (r.ok ? r.json() : [])).then((bs) => { const map = {}; for (const b of bs) map[b.matchId] = { home: b.homeGuess, away: b.awayGuess }; setBets(map); }).catch(() => {});
+    fetch("/api/settings").then((r) => r.json()).then((s) => setScoring(s.scoring)).catch(() => {});
     fetch("/api/matches").then((r) => r.json()).then((ms) => {
       setMatches(ms);
       const today = dayKey(new Date());
@@ -56,6 +61,13 @@ export default function MatchCalendar() {
   const today = dayKey(new Date());
   const selGames = sel ? (byDay[sel] || []) : [];
   const tag = (mt) => (mt.stage === "GROUP" ? `Grupo ${mt.group}` : STAGE_LABELS[mt.stage]);
+  // Pontuação que o usuário logado fez no jogo (só p/ jogos finalizados).
+  const myPts = (mt) => {
+    if (!mt.finished || !scoring) return null;
+    const g = bets[mt.id];
+    if (!g || g.home == null || g.away == null) return { v: 0, bet: false };
+    return { v: betPoints({ homeGuess: Number(g.home), awayGuess: Number(g.away) }, mt, scoring), bet: true };
+  };
 
   return (
     <section className="card p-4">
@@ -104,6 +116,15 @@ export default function MatchCalendar() {
                   <span className="flex items-center gap-1.5">{teamAbbr(mt.homeTeam)}<Flag t={mt.homeTeam} /></span>
                   {mt.finished ? <b className="tabular-nums">{mt.homeScore} × {mt.awayScore}</b> : <span className="text-[var(--faint)]">×</span>}
                   <span className="flex items-center gap-1.5"><Flag t={mt.awayTeam} />{teamAbbr(mt.awayTeam)}</span>
+                </div>
+                <div className="w-14 shrink-0 text-right">
+                  {(() => {
+                    const mp = myPts(mt);
+                    if (!mp) return null;
+                    return mp.bet
+                      ? <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-bold ${mp.v > 0 ? "bg-brand-light text-brand-dark" : "bg-[var(--hover)] text-[var(--muted)]"}`} title="Seus pontos nesse jogo">{Number(mp.v.toFixed(1))} pts</span>
+                      : <span className="text-[10px] text-[var(--faint)]" title="Você não palpitou">—</span>;
+                  })()}
                 </div>
               </div>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 border-t border-[var(--border)] pt-1.5 text-[10px]">

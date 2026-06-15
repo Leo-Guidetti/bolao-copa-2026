@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { flagUrl, teamFull } from "@/lib/flags";
+import { flagUrl, teamAbbr } from "@/lib/flags";
 
 const fmtPts = (n) => Number((n || 0).toFixed(1)).toString();
 const pct1 = (n, t) => (t ? (n / t) * 100 : 0).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -22,7 +22,7 @@ function TeamTag({ team, align }) {
   return (
     <span className={`flex items-center gap-1.5 ${align === "right" ? "flex-row-reverse" : ""}`}>
       <Flag team={team} big />
-      <span className="truncate">{teamFull(team)}</span>
+      <span className="truncate">{teamAbbr(team)}</span>
     </span>
   );
 }

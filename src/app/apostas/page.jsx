@@ -64,6 +64,7 @@ export default function ApostasPage() {
   const [weights, setWeights] = useState(null);
   const [scoring, setScoring] = useState(null);
   const [viewMode, setViewMode] = useState("crono");
+  const [timeTab, setTimeTab] = useState("prox"); // prox = a acontecer | fim = já aconteceram
   const [openMatch, setOpenMatch] = useState(null);
 
   useEffect(() => {
@@ -211,20 +212,33 @@ export default function ApostasPage() {
         </>
       ) : (
         <section className="mx-auto max-w-2xl space-y-4">
-          {chrono.map((d) => (
-            <div key={d.day} className="card p-4">
-              <h3 className="mb-2 font-semibold capitalize">{d.day}</h3>
-              <div className="divide-y divide-[var(--border)]">
-                {d.items.map((m) => (
-                  <div key={m.id}>
-                    <div className="pt-1 text-center text-[10px] font-medium text-[var(--muted)]">{tag(m)}</div>
-                    <Row m={m} g={guesses[m.id] || {}} lock={locked(m)} onChange={setGuess} scoring={scoring} onOpen={setOpenMatch} />
-                  </div>
-                ))}
-              </div>
+          <div className="flex justify-center">
+            <div className="flex rounded-full bg-[var(--hover)] p-0.5 text-sm">
+              <button type="button" onClick={() => setTimeTab("prox")} className={`rounded-full px-4 py-1 transition ${timeTab === "prox" ? "bg-[var(--surface)] font-semibold shadow" : "text-[var(--muted)]"}`}>A acontecer</button>
+              <button type="button" onClick={() => setTimeTab("fim")} className={`rounded-full px-4 py-1 transition ${timeTab === "fim" ? "bg-[var(--surface)] font-semibold shadow" : "text-[var(--muted)]"}`}>Já aconteceram</button>
             </div>
-          ))}
-          {chrono.length === 0 && <p className="text-center text-[var(--muted)]">Carregando jogos…</p>}
+          </div>
+          {(() => {
+            const happened = (m) => m.finished || new Date(m.kickoff).getTime() <= now;
+            let days = chrono
+              .map((d) => ({ ...d, items: d.items.filter((m) => (timeTab === "fim" ? happened(m) : !happened(m))) }))
+              .filter((d) => d.items.length);
+            if (timeTab === "fim") days = days.slice().reverse(); // já aconteceram: mais recentes primeiro
+            if (!days.length) return <p className="text-center text-[var(--muted)]">{chrono.length ? "Nenhum jogo nessa aba." : "Carregando jogos…"}</p>;
+            return days.map((d) => (
+              <div key={d.day} className="card p-4">
+                <h3 className="mb-2 font-semibold capitalize">{d.day}</h3>
+                <div className="divide-y divide-[var(--border)]">
+                  {d.items.map((m) => (
+                    <div key={m.id}>
+                      <div className="pt-1 text-center text-[10px] font-medium text-[var(--muted)]">{tag(m)}</div>
+                      <Row m={m} g={guesses[m.id] || {}} lock={locked(m)} onChange={setGuess} scoring={scoring} onOpen={setOpenMatch} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ));
+          })()}
         </section>
       )}
     </div>
