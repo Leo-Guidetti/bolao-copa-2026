@@ -56,7 +56,7 @@ export default async function HomePage() {
   // Craque do dia: melhor jogador (por pontos no jogo) dos jogos de ONTEM.
   // Dia "lógico" do jogo: madrugada até 4h (BRT) conta como o dia anterior.
   const dayOf = (d) => new Date(new Date(d).getTime() - 4 * 3600 * 1000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
-  const ydStr = new Date(Date.now() - 86400000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const ydStr = dayOf(Date.now() - 86400000); // "ontem" lógico (respeita o corte das 4h)
   const allMatches = await prisma.match.findMany({ where: { finished: true } });
   const ydMatchIds = allMatches.filter((m) => dayOf(m.kickoff) === ydStr).map((m) => m.id);
   let craque = null;
