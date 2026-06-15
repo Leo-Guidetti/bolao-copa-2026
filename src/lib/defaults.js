@@ -39,8 +39,10 @@ export const DEFAULT_SETTINGS = {
     scout: {
       goal: { GOL: 12, ZAG: 12, LAT: 11, MEI: 9, ATA: 8 },
       assist: { GOL: 5, ZAG: 5, LAT: 5, MEI: 5, ATA: 5 },
-      shotOnTarget: { GOL: 0, ZAG: 1, LAT: 1, MEI: 1, ATA: 1 },
-      shot: { GOL: 0, ZAG: 0, LAT: 0, MEI: 0, ATA: 0 },
+      shotOnTarget: { GOL: 1, ZAG: 1, LAT: 1, MEI: 1, ATA: 1 },
+      shot: { GOL: 0.5, ZAG: 0.5, LAT: 0.5, MEI: 0.5, ATA: 0.5 },
+      shotOnPost: { GOL: 3, ZAG: 3, LAT: 3, MEI: 3, ATA: 3 },
+      penaltyMissed: { GOL: -3, ZAG: -3, LAT: -3, MEI: -3, ATA: -3 },
       tackleInterception: { GOL: 0, ZAG: 1, LAT: 1, MEI: 1, ATA: 0 },
       cleanSheet: { GOL: 5, ZAG: 5, LAT: 5, MEI: 0, ATA: 0 },
       save: { GOL: 1.5, ZAG: 0, LAT: 0, MEI: 0, ATA: 0 },

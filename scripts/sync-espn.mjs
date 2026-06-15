@@ -185,16 +185,21 @@ export async function run({ prisma, dry = false, log = console.log }) {
       const minutes = cval(cats, "general", "minutes");
       const conceded = cval(cats, "goalKeeping", "goalsConceded");
       const onTarget = cval(cats, "offensive", "shotsOnTarget");
-      const totalShots = cval(cats, "offensive", "totalShots");
+      const offTarget = cval(cats, "offensive", "shotsOffTarget");
+      const onPost = cval(cats, "offensive", "shotsOnPost");
+      const penMissed = cval(cats, "offensive", "penaltyKicksMissed");
       const gls = cval(cats, "offensive", "totalGoals");
+      const firstGame = m.stage === "GROUP" && m.round === 1; // trave só conta a partir do 2º jogo do time
       // "Sem sofrer gol" olha o PLACAR DO JOGO (o time sofreu gol ou não), não o stat individual.
       const teamConceded = (norm(p.team) === norm(ev.homeApp)) ? ev.awayScore : ev.homeScore;
       const data = {
         goals: gls,
         assists: cval(cats, "offensive", "goalAssists"),
-        // Buckets exclusivos: gol NÃO conta como finalização; "no alvo" exclui as que viraram gol.
-        shots: Math.max(0, totalShots - onTarget),   // finalização fora do alvo
+        // Buckets exclusivos (campos separados da ESPN): fora / no alvo (exclui gols) / trave.
+        shots: offTarget,                            // finalização pra fora
         shotsOnTarget: Math.max(0, onTarget - gls),  // no alvo que não viraram gol
+        shotsOnPost: firstGame ? 0 : onPost,         // trave (só a partir do 2º jogo do time)
+        penaltiesMissed: penMissed,                  // pênalti perdido
         saves: cval(cats, "goalKeeping", "saves"),
         penaltiesSaved: cval(cats, "goalKeeping", "penaltyKicksSaved"),
         tackles: cval(cats, "defensive", "totalTackles"),
@@ -233,7 +238,7 @@ export async function run({ prisma, dry = false, log = console.log }) {
 }
 
 export async function recomputeTotals(prisma) {
-  const ALL = ["goals", "assists", "cleanSheet", "saves", "yellow", "red", "ownGoals", "shots", "shotsOnTarget", "tackles", "interceptions", "penaltiesSaved", "goalsConceded"];
+  const ALL = ["goals", "assists", "cleanSheet", "saves", "yellow", "red", "ownGoals", "shots", "shotsOnTarget", "shotsOnPost", "tackles", "interceptions", "penaltiesSaved", "penaltiesMissed", "goalsConceded"];
   await prisma.player.updateMany({ data: Object.fromEntries(ALL.map((f) => [f, 0])) });
   const grouped = await prisma.matchPlayerStat.groupBy({ by: ["playerId"], _sum: Object.fromEntries(ALL.map((f) => [f, true])) });
   for (const g of grouped) {

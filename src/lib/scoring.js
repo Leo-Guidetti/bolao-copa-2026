@@ -57,7 +57,9 @@ export function playerScore(player, scout) {
   sum += n("goals") * v("goal");
   sum += n("assists") * v("assist");
   sum += n("shotsOnTarget") * v("shotOnTarget");
+  sum += n("shotsOnPost") * v("shotOnPost");
   sum += n("shots") * v("shot");
+  sum += n("penaltiesMissed") * v("penaltyMissed");
   // Desarme + Interceptacao = scout unico
   sum += (n("tackles") + n("interceptions")) * v("tackleInterception");
   sum += n("cleanSheet") * v("cleanSheet");
@@ -75,11 +77,13 @@ const SCOUT_EVENTS = [
   { key: "goal", label: "Gol", stat: "goals" },
   { key: "assist", label: "Assistência", stat: "assists" },
   { key: "shotOnTarget", label: "Finalização no alvo", stat: "shotsOnTarget" },
-  { key: "shot", label: "Finalização", stat: "shots" },
+  { key: "shotOnPost", label: "Finalização na trave", stat: "shotsOnPost" },
+  { key: "shot", label: "Finalização pra fora", stat: "shots" },
   { key: "tackleInterception", label: "Desarme / Interceptação", stat: ["tackles", "interceptions"] },
   { key: "cleanSheet", label: "Sem sofrer gol", stat: "cleanSheet" },
   { key: "save", label: "Defesa", stat: "saves" },
   { key: "penaltySaved", label: "Defesa de pênalti", stat: "penaltiesSaved" },
+  { key: "penaltyMissed", label: "Pênalti perdido", stat: "penaltiesMissed" },
   { key: "yellow", label: "Cartão amarelo", stat: "yellow" },
   { key: "red", label: "Cartão vermelho", stat: "red" },
   { key: "ownGoal", label: "Gol contra", stat: "ownGoals" },
