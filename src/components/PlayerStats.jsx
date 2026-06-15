@@ -2,9 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { playerScore } from "@/lib/scoring";
-import { flagUrl } from "@/lib/flags";
+import { flagUrl, teamFull } from "@/lib/flags";
 
-const fmt = (n) => Number((n || 0).toFixed(1)).toString();
+const fmt = (n) => (Number(n) || 0).toFixed(1).replace(".", ",");
+
+function MiniFlag({ t }) {
+  const u = flagUrl(t);
+  return <span className="inline-flex h-3.5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-[var(--hover)]">{u ? <img src={u} alt="" className="h-full w-full object-cover" /> : null}</span>;
+}
 
 // Modal com a pontuação do jogador JOGO A JOGO (stats + pontos de cada partida) + total.
 export default function PlayerStats({ player, scout, capMult = 1, isCaptain = false, onClose }) {
@@ -32,7 +37,7 @@ export default function PlayerStats({ player, scout, capMult = 1, isCaptain = fa
           </span>
           <div className="min-w-0 flex-1">
             <div className="truncate font-semibold">{player.name}{isCaptain && <span className="pill ml-1 bg-accent/20 text-yellow-700">C10</span>}</div>
-            <div className="text-xs text-[var(--faint)]">{player.position} · {player.team} · {player.price}¢</div>
+            <div className="text-xs text-[var(--faint)]">{player.position} · {teamFull(player.team)} · {player.price}¢</div>
           </div>
           <div className="text-right">
             <div className={`text-lg font-bold tabular-nums ${total < 0 ? "text-red-500" : isCaptain ? "text-yellow-600" : "text-brand-dark"}`}>{fmt(total)}</div>
@@ -68,7 +73,12 @@ export default function PlayerStats({ player, scout, capMult = 1, isCaptain = fa
             {data.map((g) => (
               <div key={g.matchId} className="rounded-xl border border-[var(--border)] p-2">
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="min-w-0 flex-1 truncate font-medium">{g.label}{!g.finished && <span className="ml-1 text-[10px] text-[var(--faint)]">(ao vivo)</span>}</span>
+                  <span className="flex min-w-0 flex-1 items-center gap-1 font-medium">
+                    <MiniFlag t={g.homeTeam} />
+                    <span className="truncate">{teamFull(g.homeTeam)} <b className="tabular-nums">{g.homeScore ?? "-"}×{g.awayScore ?? "-"}</b> {teamFull(g.awayTeam)}</span>
+                    <MiniFlag t={g.awayTeam} />
+                    {!g.finished && <span className="shrink-0 text-[10px] text-[var(--faint)]">(ao vivo)</span>}
+                  </span>
                   <span className={`shrink-0 font-bold tabular-nums ${g.points < 0 ? "text-red-500" : "text-brand-dark"}`}>{fmt(g.points)} pts</span>
                 </div>
                 {g.breakdown.length > 0 ? (

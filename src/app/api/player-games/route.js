@@ -18,6 +18,10 @@ export async function GET(req) {
   const games = rows.map((s) => ({
     matchId: s.matchId,
     label: `${s.match.homeTeam} ${s.match.homeScore ?? "-"}×${s.match.awayScore ?? "-"} ${s.match.awayTeam}`,
+    homeTeam: s.match.homeTeam,
+    awayTeam: s.match.awayTeam,
+    homeScore: s.match.homeScore,
+    awayScore: s.match.awayScore,
     kickoff: s.match.kickoff,
     finished: s.match.finished,
     minutes: s.minutes,

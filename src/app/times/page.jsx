@@ -5,7 +5,7 @@ import Pitch from "@/components/Pitch";
 import LeigoMaster from "@/components/LeigoMaster";
 import PlayerStats from "@/components/PlayerStats";
 import { playerScore } from "@/lib/scoring";
-import { flagUrl } from "@/lib/flags";
+import { flagUrl, teamFull } from "@/lib/flags";
 
 function Avatar({ url, name, size = "h-7 w-7" }) {
   const i = (name || "?").trim().charAt(0).toUpperCase();
@@ -27,7 +27,7 @@ function CmpCard({ p, pts, win, cap, capMult = 2, onClick }) {
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-xs font-medium leading-tight">{p.name}{cap && <span className="ml-1 text-[9px] font-bold text-yellow-700">C10</span>}</span>
-        <span className="block truncate text-[10px] text-[var(--faint)]">{p.position} · {p.team}</span>
+        <span className="block truncate text-[10px] text-[var(--faint)]">{p.position} · {teamFull(p.team)}</span>
       </span>
       <span className={`flex shrink-0 items-center gap-0.5 text-sm font-bold tabular-nums ${cap ? "text-yellow-600" : pts < 0 ? "text-red-500" : win ? "text-brand-dark" : ""}`}>{pts.toFixed(1)}{cap && <span className="text-[8px] font-extrabold text-yellow-700">×{capMult}</span>}</span>
     </div>
