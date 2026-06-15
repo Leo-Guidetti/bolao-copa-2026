@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { playerScore } from "@/lib/scoring";
-import { flagUrl, teamFull } from "@/lib/flags";
+import { flagUrl, teamFull, teamAbbr } from "@/lib/flags";
 
 const fmt = (n) => (Number(n) || 0).toFixed(1).replace(".", ",");
 
@@ -75,7 +75,7 @@ export default function PlayerStats({ player, scout, capMult = 1, isCaptain = fa
                 <div className="flex items-center gap-2 text-sm">
                   <span className="flex min-w-0 flex-1 items-center gap-1 font-medium">
                     <MiniFlag t={g.homeTeam} />
-                    <span className="truncate">{teamFull(g.homeTeam)} <b className="tabular-nums">{g.homeScore ?? "-"}×{g.awayScore ?? "-"}</b> {teamFull(g.awayTeam)}</span>
+                    <span className="truncate">{teamAbbr(g.homeTeam)} <b className="tabular-nums">{g.homeScore ?? "-"}×{g.awayScore ?? "-"}</b> {teamAbbr(g.awayTeam)}</span>
                     <MiniFlag t={g.awayTeam} />
                     {!g.finished && <span className="shrink-0 text-[10px] text-[var(--faint)]">(ao vivo)</span>}
                   </span>

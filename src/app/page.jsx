@@ -188,12 +188,12 @@ export default async function HomePage() {
               <div className="truncate font-semibold">{craque.player.name}</div>
               <div className="truncate text-xs text-[var(--faint)]">{craque.player.position} · {craque.player.team} · {craque.match.homeTeam} {craque.match.homeScore}×{craque.match.awayScore} {craque.match.awayTeam}</div>
             </div>
-            <div className="shrink-0 text-2xl font-bold text-brand-dark">{Number(craque.pts.toFixed(1))}<span className="text-sm font-normal text-[var(--muted)]"> pts</span></div>
+            <div className="shrink-0 text-2xl font-bold text-brand-dark">{craque.pts.toFixed(1).replace(".", ",")}<span className="text-sm font-normal text-[var(--muted)]"> pts</span></div>
           </div>
           {craqueBreak.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {craqueBreak.map((b) => (
-                <span key={b.key} className={`pill text-xs ${b.points < 0 ? "bg-red-500/15 text-red-600" : "bg-brand-light text-brand-dark"}`}>{b.label}: {b.count}×{b.weight} = {Number(b.points.toFixed(1))}</span>
+                <span key={b.key} className={`pill text-xs ${b.points < 0 ? "bg-red-500/15 text-red-600" : "bg-brand-light text-brand-dark"}`}>{b.label}: {b.count}×{b.weight} = {b.points.toFixed(1).replace(".", ",")}</span>
               ))}
             </div>
           )}

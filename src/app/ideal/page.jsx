@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Pitch from "@/components/Pitch";
 import PlayerStats from "@/components/PlayerStats";
 import { playerScore } from "@/lib/scoring";
+import { teamFull } from "@/lib/flags";
 import { FORMATIONS, RESERVES, POSITIONS } from "@/lib/defaults";
 
 export default function IdealPage() {
@@ -67,7 +68,7 @@ export default function IdealPage() {
                 <button onClick={() => setDetail(p)} className="flex w-full items-center gap-2 py-1.5 text-left text-sm hover:opacity-80">
                   <span className="w-5 text-center text-xs font-bold text-[var(--faint)]">{i + 1}</span>
                   <span className="w-8 text-center text-[10px] font-bold text-[var(--muted)]">{p.position}</span>
-                  <span className="min-w-0 flex-1 truncate">{p.name} <span className="text-[var(--faint)]">{p.team}</span></span>
+                  <span className="min-w-0 flex-1 truncate">{p.name} <span className="text-[var(--faint)]">{teamFull(p.team)}</span></span>
                   <span className={`font-bold tabular-nums ${ptsOf(p) < 0 ? "text-red-500" : ""}`}>{ptsOf(p).toFixed(1)}<span className="text-[10px] font-normal text-[var(--faint)]"> pts</span></span>
                 </button>
               </li>

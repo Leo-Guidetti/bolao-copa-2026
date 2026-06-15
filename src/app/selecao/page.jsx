@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FORMATIONS, RESERVES, POSITIONS, POSITION_LABELS, DEFAULT_FORMATION, SQUAD_SIZE } from "@/lib/defaults";
-import { flagUrl } from "@/lib/flags";
+import { flagUrl, teamFull } from "@/lib/flags";
 import Pitch from "@/components/Pitch";
 import { playerScore } from "@/lib/scoring";
 import LeigoMaster from "@/components/LeigoMaster";
@@ -194,7 +194,7 @@ export default function SelecaoPage() {
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1 truncate text-sm font-medium">{p.name}{isCap && <span className="pill bg-accent/20 text-[9px] font-bold text-yellow-700">C10</span>}</span>
-          <span className="block truncate text-[11px] text-[var(--faint)]">{p.team}</span>
+          <span className="block truncate text-[11px] text-[var(--faint)]">{teamFull(p.team)}</span>
         </span>
         {(readOnly || ptsOf(p) !== 0) && <span className={`flex shrink-0 items-center gap-0.5 text-sm font-bold tabular-nums ${isCap ? "text-yellow-600" : ptsOf(p) < 0 ? "text-red-500" : ""}`}>{(ptsOf(p) * (isCap ? capMult : 1)).toFixed(1)}{isCap && <span className="rounded bg-accent/20 px-1 text-[9px] font-extrabold text-yellow-700">×{capMult}</span>}<span className="ml-0.5 text-[10px] font-normal text-[var(--faint)]">pts</span></span>}
         <span className="pill shrink-0 bg-accent/15 font-semibold text-yellow-700">{p.price}¢</span>
@@ -364,7 +364,7 @@ export default function SelecaoPage() {
                     </span>
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-medium">{p.name}</span>
-                      <span className="block text-[11px] text-[var(--faint)]">{p.position} - {p.team}</span>
+                      <span className="block text-[11px] text-[var(--faint)]">{p.position} - {teamFull(p.team)}</span>
                     </span>
                     <span className="ml-auto flex items-center gap-1.5">
                       <span className={`flex items-center gap-0.5 text-sm font-bold tabular-nums ${isCap ? "text-yellow-600" : ptsOf(p) < 0 ? "text-red-500" : ""}`}>{(ptsOf(p) * (isCap ? capMult : 1)).toFixed(1)}{isCap && <span className="rounded bg-accent/20 px-1 text-[9px] font-extrabold text-yellow-700">×{capMult}</span>}<span className="text-[10px] font-normal text-[var(--faint)]"> pts</span></span>
