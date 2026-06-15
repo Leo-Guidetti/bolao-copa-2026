@@ -219,7 +219,7 @@ export default function ApostasPage() {
             </div>
           </div>
           {(() => {
-            const happened = (m) => m.finished || new Date(m.kickoff).getTime() <= now;
+            const happened = (m) => m.finished; // só conta como "já aconteceu" quando o jogo termina (resultado/pontos computados)
             let days = chrono
               .map((d) => ({ ...d, items: d.items.filter((m) => (timeTab === "fim" ? happened(m) : !happened(m))) }))
               .filter((d) => d.items.length);
