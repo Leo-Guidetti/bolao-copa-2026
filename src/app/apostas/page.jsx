@@ -221,7 +221,11 @@ export default function ApostasPage() {
           {(() => {
             const happened = (m) => m.finished; // só conta como "já aconteceu" quando o jogo termina (resultado/pontos computados)
             let days = chrono
-              .map((d) => ({ ...d, items: d.items.filter((m) => (timeTab === "fim" ? happened(m) : !happened(m))) }))
+              .map((d) => {
+                let items = d.items.filter((m) => (timeTab === "fim" ? happened(m) : !happened(m)));
+                if (timeTab === "fim") items = items.slice().reverse(); // mais tarde -> mais cedo
+                return { ...d, items };
+              })
               .filter((d) => d.items.length);
             if (timeTab === "fim") days = days.slice().reverse(); // já aconteceram: mais recentes primeiro
             if (!days.length) return <p className="text-center text-[var(--muted)]">{chrono.length ? "Nenhum jogo nessa aba." : "Carregando jogos…"}</p>;
