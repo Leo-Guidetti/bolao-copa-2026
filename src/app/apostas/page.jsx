@@ -12,6 +12,15 @@ const fmtPts = (n) => n.toFixed(n % 1 === 0 ? 0 : 1);
 const KO_ORDER = ["R32", "R16", "QF", "SF", "THIRD", "FINAL"];
 // Dia "lógico" do jogo: madrugada até 4h (BRT) conta como o dia anterior.
 const matchDay = (d) => new Date(new Date(d).getTime() - 4 * 3600 * 1000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+const BET_LOCK_MS = 1 * 60 * 1000; // palpite trava 1 min antes do apito
+function fmtRemain(ms) {
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${String(m).padStart(2, "0")}min`;
+  if (m > 0) return `${m}min ${String(sec).padStart(2, "0")}s`;
+  return `${sec}s`;
+}
 function fmtDate(m) {
   return new Date(m.kickoff).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
@@ -29,13 +38,19 @@ function Flag({ team, align }) {
   );
 }
 
-function Row({ m, g, lock, onChange, scoring, onOpen }) {
+function Row({ m, g, lock, onChange, scoring, onOpen, now = Date.now() }) {
   const done = m.finished && m.homeScore != null && m.awayScore != null;
+  const tbd = m.homeTeam === "A definir" || m.awayTeam === "A definir";
+  const lockAt = new Date(m.kickoff).getTime() - BET_LOCK_MS;
+  const showCount = !done && !tbd && now < lockAt;
   const hasGuess = g && g.home !== "" && g.home != null && g.away !== "" && g.away != null;
   const pts = done && hasGuess && scoring ? betPoints({ homeGuess: Number(g.home), awayGuess: Number(g.away) }, m, scoring) : 0;
   return (
     <div className={`py-2 ${lock ? "cursor-pointer opacity-80 hover:bg-[var(--hover)]" : ""}`} onClick={lock && onOpen ? () => onOpen(m) : undefined} title={lock ? "Ver palpites de todos" : undefined}>
-      <div className="mb-0.5 text-center text-[10px] text-[var(--faint)]">{fmtDate(m)} (BRT){lock ? " 🔒" : ""}</div>
+      <div className="mb-0.5 text-center text-[10px] text-[var(--faint)]">
+        {fmtDate(m)} (BRT){lock && !showCount ? " 🔒" : ""}
+        {showCount && <span className="ml-1.5 font-bold text-emerald-400" style={{ textShadow: "0 0 8px rgba(16,185,129,0.7)" }}>⏱ fecha em {fmtRemain(lockAt - now)}</span>}
+      </div>
       <div className="flex items-center gap-2">
         <div className="flex-1"><Flag team={m.homeTeam} align="right" /></div>
         <input type="number" inputMode="numeric" min="0" disabled={lock} className="input w-12 px-0 text-center" value={g.home ?? ""} onChange={(e) => onChange(m.id, "home", e.target.value)} />
@@ -82,7 +97,8 @@ export default function ApostasPage() {
     });
   }, [me]);
 
-  const now = Date.now();
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
   const _wB = weights?.weightBets ?? 0.6, _wS = weights?.weightSquad ?? 0.4, _sumW = (_wB + _wS) || 1;
   const pctBets = Math.round((_wB / _sumW) * 100);
   const myBetPts = useMemo(() => {
@@ -95,7 +111,6 @@ export default function ApostasPage() {
     }, 0);
   }, [matches, guesses, scoring]);
   const tbd = (m) => m.homeTeam === "A definir" || m.awayTeam === "A definir";
-  const BET_LOCK_MS = 30 * 60 * 1000; // 30 min antes do jogo
   const locked = (m) => m.finished || tbd(m) || new Date(m.kickoff).getTime() - BET_LOCK_MS <= now;
   const guessesRef = useRef({});
   useEffect(() => { guessesRef.current = guesses; }, [guesses]);
@@ -155,7 +170,7 @@ export default function ApostasPage() {
       {openMatch && <MatchBets match={openMatch} onClose={() => setOpenMatch(null)} />}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Apostas de Placar</h1>
-        <p className="mt-1 text-[var(--muted)]">Calendário completo por grupo e rodada. Cada palpite trava 30 min antes do apito inicial do jogo. <span className="text-[var(--faint)]">Valem {pctBets}% da pontuação final.</span></p>
+        <p className="mt-1 text-[var(--muted)]">Calendário completo por grupo e rodada. Cada palpite trava 1 min antes do apito inicial do jogo. <span className="text-[var(--faint)]">Valem {pctBets}% da pontuação final.</span></p>
       </div>
 
       <div className="card sticky top-16 z-10 flex flex-wrap items-center gap-3 p-4">
@@ -187,7 +202,7 @@ export default function ApostasPage() {
               {[1, 2, 3].map((r) => (
                 <div key={r} className="mt-2">
                   <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--faint)]">Rodada {r}</div>
-                  <div className="divide-y divide-[var(--border)]">{(groups[gl][r] || []).map((m) => <Row key={m.id} m={m} g={guesses[m.id] || {}} lock={locked(m)} onChange={setGuess} scoring={scoring} onOpen={setOpenMatch} />)}</div>
+                  <div className="divide-y divide-[var(--border)]">{(groups[gl][r] || []).map((m) => <Row key={m.id} m={m} g={guesses[m.id] || {}} lock={locked(m)} onChange={setGuess} scoring={scoring} onOpen={setOpenMatch} now={now} />)}</div>
                 </div>
               ))}
             </div>
@@ -202,7 +217,7 @@ export default function ApostasPage() {
             <div key={s} className="card p-4">
               <h3 className="mb-2 font-semibold">{STAGE_LABELS[s]}</h3>
               <div className="divide-y divide-[var(--border)]">
-                {knockout[s].map((m, i) => (<div key={m.id}><div className="pt-2 text-[11px] text-[var(--faint)]">Jogo {i + 1}</div><Row m={m} g={guesses[m.id] || {}} lock={locked(m)} onChange={setGuess} scoring={scoring} onOpen={setOpenMatch} /></div>))}
+                {knockout[s].map((m, i) => (<div key={m.id}><div className="pt-2 text-[11px] text-[var(--faint)]">Jogo {i + 1}</div><Row m={m} g={guesses[m.id] || {}} lock={locked(m)} onChange={setGuess} scoring={scoring} onOpen={setOpenMatch} now={now} /></div>))}
               </div>
               <p className="mt-2 text-xs text-[var(--faint)]">Confrontos definidos após a fase de grupos.</p>
             </div>
@@ -236,7 +251,7 @@ export default function ApostasPage() {
                   {d.items.map((m) => (
                     <div key={m.id}>
                       <div className="pt-1 text-center text-[10px] font-medium text-[var(--muted)]">{tag(m)}</div>
-                      <Row m={m} g={guesses[m.id] || {}} lock={locked(m)} onChange={setGuess} scoring={scoring} onOpen={setOpenMatch} />
+                      <Row m={m} g={guesses[m.id] || {}} lock={locked(m)} onChange={setGuess} scoring={scoring} onOpen={setOpenMatch} now={now} />
                     </div>
                   ))}
                 </div>

@@ -81,7 +81,7 @@ export default function MatchBets({ match, onClose }) {
         {!data ? (
           <p className="py-2 text-sm text-[var(--muted)]">Carregando…</p>
         ) : !data.locked ? (
-          <p className="py-2 text-sm text-[var(--muted)]">Os palpites de todos aparecem quando o jogo travar (30 min antes do apito).</p>
+          <p className="py-2 text-sm text-[var(--muted)]">Os palpites de todos aparecem quando o jogo travar (1 min antes do apito).</p>
         ) : (
           <>
             {dist && dist.total > 0 ? (

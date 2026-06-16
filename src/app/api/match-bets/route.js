@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getSetting } from "@/lib/config";
 import { betPoints } from "@/lib/scoring";
 
-const LOCK_MS = 30 * 60 * 1000; // mesmo lock das apostas (30 min antes)
+const LOCK_MS = 1 * 60 * 1000; // mesmo lock das apostas (1 min antes)
 
 // GET /api/match-bets?matchId=... -> palpites de TODOS naquele jogo (só depois de travar),
 // ordenados por pontos no jogo (desc).

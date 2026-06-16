@@ -15,7 +15,7 @@ export async function POST(req) {
   const matches = await prisma.match.findMany();
   const matchById = Object.fromEntries(matches.map((m) => [m.id, m]));
   const now = Date.now();
-  const LOCK_MS = 30 * 60 * 1000;
+  const LOCK_MS = 1 * 60 * 1000; // palpite trava 1 min antes do apito
   let saved = 0;
   for (const b of bets || []) {
     const m = matchById[b.matchId];
