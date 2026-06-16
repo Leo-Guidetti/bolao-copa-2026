@@ -113,7 +113,7 @@ export default async function RegulamentoPage() {
             <span key={p.label} className="pill bg-brand-light text-brand-dark">{p.label}: {String(p.mult).replace(".", ",")}×</span>
           ))}
         </div>
-        <p className="mt-2 text-xs text-[var(--faint)]">Ex.: placar exato na final = {sc.exactScore} × {String(sc.phaseMultipliers?.FINAL ?? 1).replace(".", ",")} = <b>{(sc.exactScore * (sc.phaseMultipliers?.FINAL ?? 1)).toFixed(0)} pts</b>. Cada palpite trava quando a bola rola — depois disso não dá mais pra editar.</p>
+        <p className="mt-2 text-xs text-[var(--faint)]">Ex.: placar exato na final = {sc.exactScore} × {String(sc.phaseMultipliers?.FINAL ?? 1).replace(".", ",")} = <b>{(sc.exactScore * (sc.phaseMultipliers?.FINAL ?? 1)).toFixed(0)} pts</b>. Cada palpite trava 1 minuto antes do apito inicial — depois disso não dá mais pra editar.</p>
       </section>
 
       {/* Parte 2 - Minha seleção */}
@@ -149,7 +149,7 @@ export default async function RegulamentoPage() {
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-xs text-[var(--faint)]">GOL = goleiro · ZAG = zagueiro · LAT = lateral · MEI = meia · ATA = atacante. “—” quer dizer que aquela jogada não pontua pra essa posição.</p>
+        <p className="mt-2 text-xs text-[var(--faint)]">GOL = goleiro · ZAG = zagueiro · LAT = lateral · MEI = meia · ATA = atacante. “—” quer dizer que aquela jogada não pontua pra essa posição. A <b>finalização na trave</b> só passa a contar a partir do <b>2º jogo</b> de cada seleção.</p>
 
         <h3 className="mt-4 text-sm font-semibold">Exemplos de pontuação no jogo</h3>
         <div className="mt-2 space-y-1.5 text-sm">
@@ -185,7 +185,7 @@ export default async function RegulamentoPage() {
         </div>
         <p className="mt-3 text-xs text-[var(--faint)]">
           O valor da entrada (cash-in) é de {(settings.entry?.amount ?? 50).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} por participante e todo mundo entra no bolo.
-          Em caso de empate de pontos, vale o resultado mais recente atualizado no app.
+          Em caso de empate na pontuação final, o desempate é: 1º) maior pontuação na seleção; 2º) maior pontuação nos palpites de placar.
         </p>
         <a href="/apostas" className="btn-primary mt-4 inline-block">Bora palpitar →</a>
       </section>
