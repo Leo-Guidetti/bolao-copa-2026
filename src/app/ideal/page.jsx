@@ -12,10 +12,12 @@ export default function IdealPage() {
   const [rules, setRules] = useState(null);
   const [formation, setFormation] = useState("4-3-3");
   const [detail, setDetail] = useState(null);
+  const [myIds, setMyIds] = useState([]);
 
   useEffect(() => {
     fetch("/api/players").then((r) => r.json()).then(setPlayers);
     fetch("/api/settings").then((r) => r.json()).then((s) => setRules(s.squadRules));
+    fetch("/api/squad").then((r) => (r.ok ? r.json() : null)).then((sq) => { if (sq?.players) setMyIds(sq.players.map((p) => p.playerId)); }).catch(() => {});
   }, []);
 
   const scout = rules?.scout || {};
@@ -58,14 +60,14 @@ export default function IdealPage() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="mx-auto w-full max-w-[360px]">
-          <Pitch formation={formation} starters={starters} reserves={reserves} camisa10Id={null} showPoints pointsOf={ptsOf} onPlayer={setDetail} />
+          <Pitch formation={formation} starters={starters} reserves={reserves} camisa10Id={null} showPoints pointsOf={ptsOf} onPlayer={setDetail} mineIds={myIds} />
         </div>
         <div className="card p-4">
           <h2 className="mb-2 font-semibold">Escalação (titulares + reservas)</h2>
           <ul className="divide-y divide-[var(--border)]">
             {ranked.map((p, i) => (
               <li key={p.id}>
-                <button onClick={() => setDetail(p)} className="flex w-full items-center gap-2 py-1.5 text-left text-sm hover:opacity-80">
+                <button onClick={() => setDetail(p)} className={`flex w-full items-center gap-2 rounded-lg py-1.5 text-left text-sm hover:opacity-80 ${myIds.includes(p.id) ? "px-2 ring-2 ring-inset ring-emerald-400" : ""}`}>
                   <span className="w-5 text-center text-xs font-bold text-[var(--faint)]">{i + 1}</span>
                   <span className="w-8 text-center text-[10px] font-bold text-[var(--muted)]">{p.position}</span>
                   <span className="min-w-0 flex-1 truncate">{p.name} <span className="text-[var(--faint)]">{teamFull(p.team)}</span></span>

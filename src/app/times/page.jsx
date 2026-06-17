@@ -72,6 +72,8 @@ export default function TimesPage() {
   );
 
   const cur = squads[sel] || squads[0];
+  const mineSquad = squads.find((s) => s.participantId === me?.id);
+  const myIds = mineSquad ? [...mineSquad.starters, ...mineSquad.reserves].map((p) => p.id) : [];
 
   return (
     <div className="space-y-6">
@@ -164,7 +166,7 @@ export default function TimesPage() {
             </div>
             <div className="max-w-[340px]">
               <Pitch formation={cur.formation} starters={cur.starters} reserves={cur.reserves} camisa10Id={cur.captainId} capMult={capMult}
-                showPoints pointsOf={(pl) => playerScore(pl, scout) * (pl.id === cur.captainId ? capMult : 1)} onPlayer={(pl) => setDetail({ player: pl, captainId: cur.captainId })} />
+                showPoints pointsOf={(pl) => playerScore(pl, scout) * (pl.id === cur.captainId ? capMult : 1)} onPlayer={(pl) => setDetail({ player: pl, captainId: cur.captainId })} mineIds={myIds} />
             </div>
           </div>
         </div>

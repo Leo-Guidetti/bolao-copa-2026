@@ -1,4 +1,5 @@
 import { computeStandings } from "@/lib/standings";
+import { currentParticipant } from "@/lib/session";
 import LeigoMaster from "@/components/LeigoMaster";
 import RankingTable from "@/components/RankingTable";
 
@@ -12,6 +13,7 @@ const medal = ["🥇", "🥈", "🥉"];
 
 export default async function RankingPage() {
   const { ranked, totalPot, prizes, settings } = await computeStandings();
+  const me = await currentParticipant();
   const wB = settings.ranking.weightBets, wS = settings.ranking.weightSquad, sumW = (wB + wS) || 1;
   const pctBets = Math.round((wB / sumW) * 100), pctSquad = Math.round((wS / sumW) * 100);
   const prizeByPlace = Object.fromEntries(prizes.map((p) => [p.place, p.amount]));
@@ -48,7 +50,7 @@ export default async function RankingPage() {
 
       {/* Tabela de ranking */}
       <section className="card overflow-hidden">
-        <RankingTable ranked={ranked} prizeByPlace={prizeByPlace} wB={wB} wS={wS} pctBets={pctBets} pctSquad={pctSquad} />
+        <RankingTable ranked={ranked} prizeByPlace={prizeByPlace} wB={wB} wS={wS} pctBets={pctBets} pctSquad={pctSquad} meId={me?.id} />
       </section>
 
       <p className="text-center text-xs text-[var(--faint)]">

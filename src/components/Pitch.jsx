@@ -26,7 +26,7 @@ function fillRow(types, pools) {
   });
 }
 
-export default function Pitch({ formation, starters = [], reserves = [], camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPoints, pointsOf, onPlayer }) {
+export default function Pitch({ formation, starters = [], reserves = [], camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPoints, pointsOf, onPlayer, mineIds = [] }) {
   const shape = FORMATIONS[formation] || FORMATIONS["4-3-3"];
 
   const pools = { GOL: [], ZAG: [], LAT: [], MEI: [], ATA: [] };
@@ -57,7 +57,7 @@ export default function Pitch({ formation, starters = [], reserves = [], camisa1
           {rows.map((row, i) => (
             <div key={i} className="flex items-center justify-evenly px-2">
               {row.map((slot) => (
-                <Slot key={slot.key} slot={slot} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={onToggleCaptain} onRemove={onRemove} showPoints={showPoints} pointsOf={pointsOf} onPlayer={onPlayer} />
+                <Slot key={slot.key} slot={slot} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={onToggleCaptain} onRemove={onRemove} showPoints={showPoints} pointsOf={pointsOf} onPlayer={onPlayer} mineIds={mineIds} />
               ))}
             </div>
           ))}
@@ -68,7 +68,7 @@ export default function Pitch({ formation, starters = [], reserves = [], camisa1
         <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--faint)]">Reservas</div>
         <div className="flex items-start justify-between gap-1">
           {benchSlots.map((slot) => (
-            <Slot key={slot.key} slot={slot} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={onToggleCaptain} onRemove={onRemove} showPoints={showPoints} pointsOf={pointsOf} onPlayer={onPlayer} dark />
+            <Slot key={slot.key} slot={slot} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={onToggleCaptain} onRemove={onRemove} showPoints={showPoints} pointsOf={pointsOf} onPlayer={onPlayer} mineIds={mineIds} dark />
           ))}
         </div>
       </div>
@@ -76,7 +76,7 @@ export default function Pitch({ formation, starters = [], reserves = [], camisa1
   );
 }
 
-function Slot({ slot, camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPoints, pointsOf, onPlayer, dark }) {
+function Slot({ slot, camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPoints, pointsOf, onPlayer, mineIds = [], dark }) {
   const { pos, player } = slot;
   if (!player) {
     return (
@@ -90,10 +90,11 @@ function Slot({ slot, camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPo
   }
   const flag = flagUrl(player.team);
   const isCap = camisa10Id === player.id;
+  const isMine = mineIds.includes(player.id);
   return (
     <div className={`flex w-14 flex-col items-center gap-1 sm:w-16 ${onPlayer ? "cursor-pointer" : ""}`} onClick={onPlayer ? () => onPlayer(player) : undefined} title={onPlayer ? "Ver pontuação" : undefined}>
       <span className="relative">
-        <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-[var(--surface)] shadow">
+        <span className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 bg-[var(--surface)] shadow ${isMine ? "border-emerald-400 ring-2 ring-emerald-400" : "border-white"}`}>
           {flag ? <img src={flag} alt={player.team} className="h-full w-full object-cover" /> : <span className="text-[10px] font-bold text-[var(--muted)]">{pos}</span>}
         </span>
 

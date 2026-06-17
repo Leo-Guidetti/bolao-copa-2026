@@ -152,7 +152,7 @@ export default async function HomePage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="card p-4">
           <div className="text-xs text-[var(--muted)]">Sua posição</div>
-          <div className="mt-1 text-2xl font-bold">{medal[myRow.place - 1] || `${myRow.place}º`}</div>
+          <div className="mt-1 text-2xl font-bold">{medal[myRow.place - 1] || (myRow.place <= N ? "💰" : `${myRow.place}º`)}</div>
           <div className="text-xs text-[var(--faint)]">de {total} {total === 1 ? "jogador" : "jogadores"}</div>
         </div>
         <div className="card p-4">
@@ -218,9 +218,9 @@ export default async function HomePage() {
             const isMe = r && r.participantId === me.id;
             const need = r && !isMe ? r.final - myRow.final : null; // quanto EU preciso pra passar esse
             return (
-              <div key={pz.place} className={`flex items-center gap-2 py-2 ${isMe ? "font-semibold text-brand-dark" : ""}`}>
-                <span className="w-7 text-lg">{medal[pz.place - 1] || `${pz.place}º`}</span>
-                <span className="flex-1 truncate">{r ? r.name : "—"} {isMe && <span className="pill bg-brand-light text-brand-dark">você</span>}</span>
+              <div key={pz.place} className={`flex items-center gap-2 py-2 ${isMe ? "rounded-lg bg-emerald-500/10 px-2 font-semibold ring-2 ring-inset ring-emerald-500" : ""}`}>
+                <span className="w-7 text-lg">{medal[pz.place - 1] || "💰"}</span>
+                <span className="flex-1 truncate">{r ? r.name : "—"} {isMe && <span className="pill bg-emerald-500/15 text-emerald-600">você</span>}</span>
                 <span className="tabular-nums text-[var(--muted)]">{r ? r.final.toFixed(1) : "—"} pts{need != null && need > 0 && <span className="ml-1 text-[10px] font-normal text-[var(--faint)]">(-{need.toFixed(1)})</span>}</span>
                 <span className="w-24 text-right tabular-nums text-brand-dark">{brl(pz.amount)}</span>
               </div>

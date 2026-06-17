@@ -130,8 +130,8 @@ export function combinedRanking(rows, ranking) {
       const squadPct = r.squadPts / maxSquad;
       return { ...r, betPct, squadPct, final };
     })
-    // Desempate: 1º) maior pontuação de seleção; 2º) maior pontuação de placar.
-    .sort((a, b) => b.final - a.final || b.squadPts - a.squadPts || b.betPts - a.betPts)
+    // Desempate: 1º) mais cravadas (placar exato); 2º) pontuação de seleção; 3º) pontuação de placar.
+    .sort((a, b) => b.final - a.final || (b.cravadas || 0) - (a.cravadas || 0) || b.squadPts - a.squadPts || b.betPts - a.betPts)
     .map((r, i) => ({ ...r, place: i + 1 }));
 }
 
