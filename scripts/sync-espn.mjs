@@ -154,9 +154,10 @@ export async function run({ prisma, dry = false, log = console.log }) {
     return uniq(list.filter((x) => x.tokens.some((t) => t.length >= 4 && toks.some((u) => u.length >= 4 && tokMatch(t, u)))));
   };
 
-  // Scout (pesado: stats por jogador) só dos jogos RECENTES — recém-encerrados (≤ ~2 dias) + em andamento.
-  // Os placares de todos os jogos já foram atualizados acima (chamada barata); o scout antigo não muda.
-  const RECENT_MS = 2.2 * 24 * 3600 * 1000;
+  // Scout (pesado: stats por jogador) só dos jogos MAIS RECENTES — recém-encerrados (≤ ~6h, janela
+  // que cobre o último jogo + os que acabaram de terminar) + os em andamento. Os placares de TODOS
+  // os jogos já foram atualizados acima (chamada barata); o scout de jogos antigos não muda mais.
+  const RECENT_MS = 6 * 3600 * 1000;
   const finished = events.filter((e) => {
     const m = matchFor(e);
     if (!m) return false;
