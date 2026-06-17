@@ -138,6 +138,9 @@ export async function syncEspn({ prisma, sinceDays = null, includeLive = false, 
   };
 
   target = events.filter((e) => (e.finished || (includeLive && e.state === "in")) && matchFor(e));
+  // Correções manuais que devem sobreviver ao sync: Setting "statOverrides" = { "matchId:playerId": { campo: valor } }
+  let statOverrides = {};
+  try { statOverrides = JSON.parse((await prisma.setting.findUnique({ where: { key: "statOverrides" } }))?.value || "{}"); } catch {}
   const photoUpdates = new Map();
   for (const ev of target) {
     const m = matchFor(ev);
@@ -180,6 +183,7 @@ export async function syncEspn({ prisma, sinceDays = null, includeLive = false, 
         minutes, cleanSheet: (minutes > 0 && teamConceded === 0 && ["GOL", "ZAG", "LAT"].includes(p.position)) ? 1 : 0,
         goalsConceded: p.position === "GOL" ? conceded : 0,
       };
+      const _ov = statOverrides[`${m.id}:${p.id}`]; if (_ov) Object.assign(data, _ov);
       scoutLinhas++;
       if (!dry) {
         await prisma.matchPlayerStat.upsert({
