@@ -239,11 +239,12 @@ export async function run({ prisma, dry = false, log = console.log }) {
 
 export async function recomputeTotals(prisma) {
   const ALL = ["goals", "assists", "cleanSheet", "saves", "yellow", "red", "ownGoals", "shots", "shotsOnTarget", "shotsOnPost", "tackles", "interceptions", "penaltiesSaved", "penaltiesMissed", "goalsConceded"];
-  await prisma.player.updateMany({ data: Object.fromEntries(ALL.map((f) => [f, 0])) });
   const grouped = await prisma.matchPlayerStat.groupBy({ by: ["playerId"], _sum: Object.fromEntries(ALL.map((f) => [f, true])) });
   for (const g of grouped) {
     await prisma.player.update({ where: { id: g.playerId }, data: Object.fromEntries(ALL.map((f) => [f, g._sum[f] || 0])) });
   }
+  // Zera só quem NÃO tem nenhuma linha de stat (evita janela com tudo zerado durante o sync).
+  await prisma.player.updateMany({ where: { id: { notIn: grouped.map((g) => g.playerId) } }, data: Object.fromEntries(ALL.map((f) => [f, 0])) });
 }
 
 const isMain = process.argv[1] && /sync-espn\.mjs$/.test(process.argv[1]);
