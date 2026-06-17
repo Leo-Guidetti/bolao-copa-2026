@@ -58,6 +58,13 @@ function Row({ m, g, lock, onChange, scoring, onOpen, now = Date.now() }) {
         <input type="number" inputMode="numeric" min="0" disabled={lock} className="input w-12 px-0 text-center" value={g.away ?? ""} onChange={(e) => onChange(m.id, "away", e.target.value)} />
         <div className="flex-1"><Flag team={m.awayTeam} /></div>
       </div>
+      {!done && (
+        <div className="mt-1 text-center">
+          {hasGuess
+            ? <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-500">✓ Palpite salvo · {g.home}×{g.away}</span>
+            : <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-semibold text-red-500">⚠ Palpite faltante</span>}
+        </div>
+      )}
       {done && (
         <div className="mt-1 flex items-center justify-center gap-2 text-[11px]">
           <span className="text-[var(--faint)]">Resultado real: <b className="tabular-nums text-[var(--text)]">{m.homeScore} × {m.awayScore}</b></span>

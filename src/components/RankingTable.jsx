@@ -1,8 +1,14 @@
 "use client";
 
 import { Fragment, useState } from "react";
+import { flagUrl, teamAbbr } from "@/lib/flags";
 
 const medal = ["🥇", "🥈", "🥉"];
+
+function Flag({ t }) {
+  const u = flagUrl(t);
+  return <span className="inline-flex h-3.5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-[var(--hover)] align-middle">{u ? <img src={u} alt="" className="h-full w-full object-cover" /> : null}</span>;
+}
 const brl = (n) => (n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const fmtW = (w) => String(w).replace(".", ",");
 const placeBadge = (place, prized) => (place <= 3 ? medal[place - 1] : prized ? "💰" : `${place}º`);
@@ -85,6 +91,15 @@ export default function RankingTable({ ranked = [], prizeByPlace = {}, wB = 0.7,
                       <span>🎯 {r.cravadas || 0} cravada{(r.cravadas || 0) === 1 ? "" : "s"} (placar exato)</span>
                       <span>{betShare}% placar · {sqShare}% seleção</span>
                     </div>
+                    {(r.cravadasList || []).length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {r.cravadasList.map((c, i) => (
+                          <span key={i} className="inline-flex items-center gap-1 rounded-full bg-[var(--surface)] px-2 py-0.5 text-[11px]">
+                            <Flag t={c.homeTeam} />{teamAbbr(c.homeTeam)} <b className="tabular-nums">{c.homeScore}×{c.awayScore}</b> {teamAbbr(c.awayTeam)}<Flag t={c.awayTeam} />
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </td>
                 </tr>
               )}
