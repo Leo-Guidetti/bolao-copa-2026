@@ -154,7 +154,15 @@ export async function run({ prisma, dry = false, log = console.log }) {
     return uniq(list.filter((x) => x.tokens.some((t) => t.length >= 4 && toks.some((u) => u.length >= 4 && tokMatch(t, u)))));
   };
 
-  const finished = events.filter((e) => e.finished && matchFor(e));
+  // Scout (pesado: stats por jogador) só dos jogos RECENTES — recém-encerrados (≤ ~2 dias) + em andamento.
+  // Os placares de todos os jogos já foram atualizados acima (chamada barata); o scout antigo não muda.
+  const RECENT_MS = 2.2 * 24 * 3600 * 1000;
+  const finished = events.filter((e) => {
+    const m = matchFor(e);
+    if (!m) return false;
+    if (e.state === "in") return true;
+    return e.finished && Date.now() - new Date(m.kickoff).getTime() <= RECENT_MS;
+  });
   const playerMiss = new Set();
   const photoUpdates = new Map();
   let rows = 0;
