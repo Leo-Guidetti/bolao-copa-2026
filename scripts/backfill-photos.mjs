@@ -65,21 +65,30 @@ console.log(`ESPN: +${espnSet} fotos.`);
 let afSet = 0, rem = "?";
 if (KEY) {
   const teams = {}; for (const p of players) (teams[p.team] ||= []).push(p);
-  const todo = Object.keys(teams).filter((t) => teams[t].some((p) => !p.photoUrl));
+  // marca seleções já processadas (pra não gastar cota de novo ao rodar repetidamente)
+  let done = []; try { done = JSON.parse((await prisma.setting.findUnique({ where: { key: "photoBackfillDone" } }))?.value || "[]"); } catch {}
+  const doneSet = new Set(done);
+  const markDone = async (team) => { doneSet.add(team); await prisma.setting.upsert({ where: { key: "photoBackfillDone" }, update: { value: JSON.stringify([...doneSet]) }, create: { key: "photoBackfillDone", value: JSON.stringify([...doneSet]) } }); };
+  // prioriza seleções com jogadores escalados e mais caros (preço desc) pra cobrir os relevantes primeiro
+  const escalado = new Set((await prisma.squadPlayer.findMany({ select: { playerId: true } })).map((x) => x.playerId));
+  const prio = (t) => Math.max(0, ...teams[t].filter((p) => !p.photoUrl).map((p) => (escalado.has(p.id) ? 1e6 : 0) + (p.price || 0)));
+  const todo = Object.keys(teams)
+    .filter((t) => !doneSet.has(t) && teams[t].some((p) => !p.photoUrl))
+    .sort((a, b) => prio(b) - prio(a));
   for (const team of todo) {
     const en = PT_EN[team] || team;
     try {
       const ts = await af(`/teams?search=${encodeURIComponent(en)}`); rem = ts.rem;
       const nat = (ts.j.response || []).find((x) => x.team?.national) || ts.j.response?.[0];
-      if (!nat) { console.log(`  ${team}: seleção não encontrada na API-Football`); }
+      if (!nat) { console.log(`  ${team}: seleção não encontrada na API-Football`); await markDone(team); }
       else {
         const sq = await af(`/players/squads?team=${nat.team.id}`); rem = sq.rem;
         const list = teams[team].filter((p) => !p.photoUrl).map((p) => ({ p, full: norm(p.name), tokens: p.name.split(/\s+/).map(norm).filter(Boolean) }));
         const find = makeFind(list); let n = 0;
         for (const ap of sq.j.response?.[0]?.players || []) { const hit = find(ap.name); if (hit && ap.photo) { await prisma.player.update({ where: { id: hit.p.id }, data: { photoUrl: ap.photo } }); hit.full = "__"; hit.tokens = []; afSet++; n++; } }
-        console.log(`  ${team}: +${n} (cota restante: ${rem})`);
+        console.log(`  ${team}: +${n} (cota restante: ${rem})`); await markDone(team);
       }
-      if (rem !== "?" && rem != null && Number(rem) <= 2) { console.log("Cota da API-Football no limite — rode de novo daqui a ~1 min."); break; }
+      if (rem !== "?" && rem != null && Number(rem) <= 2) { console.log("Cota da API-Football no limite — para por agora, retoma depois."); break; }
       await sleep(6500); // respeita o limite por minuto do plano free
     } catch (e) { console.log(`  ${team}: erro ${e.message}`); }
   }
