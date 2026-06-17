@@ -61,7 +61,7 @@ export default async function RegulamentoPage() {
         <div className="mt-3 rounded-xl bg-[var(--hover)] p-3 text-sm">
           <b>Pontos finais</b> = {pctBets}% dos seus pontos de placar + {pctSquad}% dos pontos da sua seleção.
           <div className="mt-1 text-xs text-[var(--faint)]">
-            Ex.: 40 pts de placar e 30 pts de seleção → {(0.01 * pctBets).toFixed(2).replace(".", ",")}×40 + {(0.01 * pctSquad).toFixed(2).replace(".", ",")}×30 = <b>{(0.01 * pctBets * 40 + 0.01 * pctSquad * 30).toFixed(1).replace(".", ",")} pts</b>.
+            Ex.: 40 pts de placar e 30 pts de seleção → {(0.01 * pctBets).toFixed(2)}×40 + {(0.01 * pctSquad).toFixed(2)}×30 = <b>{(0.01 * pctBets * 40 + 0.01 * pctSquad * 30).toFixed(1)} pts</b>.
           </div>
         </div>
       </section>
@@ -110,10 +110,10 @@ export default async function RegulamentoPage() {
         <p className="mt-1 text-sm text-[var(--muted)]">Quanto mais decisivo o jogo, mais valem os pontos de placar (o multiplicador incide sobre o total acima):</p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {phases.map((p) => (
-            <span key={p.label} className="pill bg-brand-light text-brand-dark">{p.label}: {String(p.mult).replace(".", ",")}×</span>
+            <span key={p.label} className="pill bg-brand-light text-brand-dark">{p.label}: {String(p.mult)}×</span>
           ))}
         </div>
-        <p className="mt-2 text-xs text-[var(--faint)]">Ex.: placar exato na final = {sc.exactScore} × {String(sc.phaseMultipliers?.FINAL ?? 1).replace(".", ",")} = <b>{(sc.exactScore * (sc.phaseMultipliers?.FINAL ?? 1)).toFixed(0)} pts</b>. Cada palpite trava 1 minuto antes do apito inicial — depois disso não dá mais pra editar.</p>
+        <p className="mt-2 text-xs text-[var(--faint)]">Ex.: placar exato na final = {sc.exactScore} × {String(sc.phaseMultipliers?.FINAL ?? 1)} =<b>{(sc.exactScore * (sc.phaseMultipliers?.FINAL ?? 1)).toFixed(0)} pts</b>. Cada palpite trava 1 minuto antes do apito inicial — depois disso não dá mais pra editar.</p>
       </section>
 
       {/* Parte 2 - Minha seleção */}

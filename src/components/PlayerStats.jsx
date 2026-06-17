@@ -5,7 +5,7 @@ import { playerScore } from "@/lib/scoring";
 import { flagUrl, teamFull, teamAbbr } from "@/lib/flags";
 import PlayerAvatar from "@/components/PlayerAvatar";
 
-const fmt = (n) => (Number(n) || 0).toFixed(1).replace(".", ",");
+const fmt = (n) => (Number(n) || 0).toFixed(1);
 
 function MiniFlag({ t }) {
   const u = flagUrl(t);

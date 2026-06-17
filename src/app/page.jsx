@@ -2,6 +2,7 @@ import { currentParticipant } from "@/lib/session";
 import { computeStandings } from "@/lib/standings";
 import { prisma } from "@/lib/prisma";
 import { flagUrl, teamAbbr } from "@/lib/flags";
+import PlayerAvatar from "@/components/PlayerAvatar";
 import { STAGE_LABELS } from "@/lib/defaults";
 import { playerScore, scoreBreakdown } from "@/lib/scoring";
 import MatchCalendar from "@/components/MatchCalendar";
@@ -181,19 +182,17 @@ export default async function HomePage() {
             <span className="text-xs text-[var(--faint)]">melhor dos jogos de ontem</span>
           </div>
           <div className="mt-2 flex items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--hover)]">
-              {flagUrl(craque.player.team) ? <img src={flagUrl(craque.player.team)} alt={craque.player.team} className="h-full w-full object-cover" /> : null}
-            </span>
+            <PlayerAvatar player={craque.player} size="md" />
             <div className="min-w-0 flex-1">
               <div className="truncate font-semibold">{craque.player.name}</div>
               <div className="truncate text-xs text-[var(--faint)]">{craque.player.position} · {craque.player.team} · {craque.match.homeTeam} {craque.match.homeScore}×{craque.match.awayScore} {craque.match.awayTeam}</div>
             </div>
-            <div className="shrink-0 text-2xl font-bold text-brand-dark">{craque.pts.toFixed(1).replace(".", ",")}<span className="text-sm font-normal text-[var(--muted)]"> pts</span></div>
+            <div className="shrink-0 text-2xl font-bold text-brand-dark">{craque.pts.toFixed(1)}<span className="text-sm font-normal text-[var(--muted)]"> pts</span></div>
           </div>
           {craqueBreak.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {craqueBreak.map((b) => (
-                <span key={b.key} className={`pill text-xs ${b.points < 0 ? "bg-red-500/15 text-red-600" : "bg-brand-light text-brand-dark"}`}>{b.label}: {b.count}×{b.weight} = {b.points.toFixed(1).replace(".", ",")}</span>
+                <span key={b.key} className={`pill text-xs ${b.points < 0 ? "bg-red-500/15 text-red-600" : "bg-brand-light text-brand-dark"}`}>{b.label}: {b.count}×{b.weight} = {b.points.toFixed(1)}</span>
               ))}
             </div>
           )}

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { flagUrl, teamAbbr } from "@/lib/flags";
 
 const fmtPts = (n) => Number((n || 0).toFixed(1)).toString();
-const pct1 = (n, t) => (t ? (n / t) * 100 : 0).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const pct1 = (n, t) => (t ? (n / t) * 100 : 0).toFixed(1);
 
 const COLORS = { home: "#1f2937", draw: "#64748b", away: "#cbd5e1" };
 
