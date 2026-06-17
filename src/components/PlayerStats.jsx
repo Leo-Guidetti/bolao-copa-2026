@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { playerScore } from "@/lib/scoring";
 import { flagUrl, teamFull, teamAbbr } from "@/lib/flags";
+import PlayerAvatar from "@/components/PlayerAvatar";
 
 const fmt = (n) => (Number(n) || 0).toFixed(1).replace(".", ",");
 
@@ -32,9 +33,7 @@ export default function PlayerStats({ player, scout, capMult = 1, isCaptain = fa
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div className="card max-h-[85vh] w-full max-w-sm space-y-3 overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--hover)]">
-            {flag ? <img src={flag} alt="" className="h-full w-full object-cover" /> : null}
-          </span>
+          <PlayerAvatar player={player} size="md" />
           <div className="min-w-0 flex-1">
             <div className="truncate font-semibold">{player.name}{isCaptain && <span className="pill ml-1 bg-accent/20 text-yellow-700">C10</span>}</div>
             <div className="text-xs text-[var(--faint)]">{player.position} · {teamFull(player.team)} · {player.price}¢</div>

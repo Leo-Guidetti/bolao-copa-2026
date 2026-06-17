@@ -6,6 +6,7 @@ import LeigoMaster from "@/components/LeigoMaster";
 import PlayerStats from "@/components/PlayerStats";
 import { playerScore } from "@/lib/scoring";
 import { flagUrl, teamFull } from "@/lib/flags";
+import PlayerAvatar from "@/components/PlayerAvatar";
 
 function Avatar({ url, name, size = "h-7 w-7" }) {
   const i = (name || "?").trim().charAt(0).toUpperCase();
@@ -22,9 +23,7 @@ function CmpCard({ p, pts, win, cap, capMult = 2, onClick }) {
   return (
     <div onClick={onClick ? () => onClick(p) : undefined} title={onClick ? "Ver pontuação" : undefined}
       className={`card flex cursor-pointer items-center gap-1.5 p-1.5 transition hover:bg-[var(--hover)] ${cap ? "ring-2 ring-accent" : win ? "ring-2 ring-brand" : ""}`}>
-      <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--hover)]">
-        {flag ? <img src={flag} alt="" className="h-full w-full object-cover" /> : null}
-      </span>
+      <PlayerAvatar player={p} size="sm" />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-xs font-medium leading-tight">{p.name}{cap && <span className="ml-1 text-[9px] font-bold text-yellow-700">C10</span>}</span>
         <span className="block truncate text-[10px] text-[var(--faint)]">{p.position} · {teamFull(p.team)}</span>

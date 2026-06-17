@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FORMATIONS, RESERVES, POSITIONS, POSITION_LABELS, DEFAULT_FORMATION, SQUAD_SIZE } from "@/lib/defaults";
 import { flagUrl, teamFull } from "@/lib/flags";
+import PlayerAvatar from "@/components/PlayerAvatar";
 import Pitch from "@/components/Pitch";
 import { playerScore } from "@/lib/scoring";
 import LeigoMaster from "@/components/LeigoMaster";
@@ -189,9 +190,7 @@ export default function SelecaoPage() {
     return (
       <div onClick={() => setDetail(p)} className="flex cursor-pointer items-center gap-2 px-3 py-2">
         <span className="w-8 shrink-0 text-center text-[10px] font-bold text-[var(--muted)]">{p.position}</span>
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--hover)]">
-          {flag ? <img src={flag} alt={p.team} className="h-full w-full object-cover" /> : null}
-        </span>
+        <PlayerAvatar player={p} size="sm" />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1 truncate text-sm font-medium">{p.name}{isCap && <span className="pill bg-accent/20 text-[9px] font-bold text-yellow-700">C10</span>}</span>
           <span className="block truncate text-[11px] text-[var(--faint)]">{teamFull(p.team)}</span>
@@ -359,9 +358,7 @@ export default function SelecaoPage() {
               return (
                 <div key={p.id} className={`card flex items-center gap-2 p-2 transition ${isSel ? "ring-2 ring-brand" : ""}`}>
                   <button onClick={() => (readOnly ? setDetail(p) : toggle(p))} className="flex flex-1 items-center gap-2 text-left">
-                    <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[var(--hover)] text-[10px] font-bold text-[var(--muted)]">
-                      {flag ? <img src={flag} alt={p.team} className="h-full w-full object-cover" /> : p.position}
-                    </span>
+                    <PlayerAvatar player={p} size="md" />
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-medium">{p.name}</span>
                       <span className="block text-[11px] text-[var(--faint)]">{p.position} - {teamFull(p.team)}</span>

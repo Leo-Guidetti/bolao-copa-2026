@@ -156,6 +156,7 @@ export async function run({ prisma, dry = false, log = console.log }) {
 
   const finished = events.filter((e) => e.finished && matchFor(e));
   const playerMiss = new Set();
+  const photoUpdates = new Map();
   let rows = 0;
   for (const ev of finished) {
     const m = matchFor(ev);
@@ -169,6 +170,8 @@ export async function run({ prisma, dry = false, log = console.log }) {
       for (const r of block.roster || []) {
         const p = find(teamApp, r.athlete?.displayName);
         if (!p) { playerMiss.add(`${r.athlete?.displayName} (${teamApp})`); continue; }
+        const photo = r.athlete?.headshot?.href;
+        if (photo && p.photoUrl !== photo) photoUpdates.set(p.id, photo);
         targets.push({ p, teamId, athId: r.athlete?.id });
       }
     }
@@ -224,6 +227,7 @@ export async function run({ prisma, dry = false, log = console.log }) {
   }
   log(`${dry ? "[DRY] " : ""}Scout por jogo: ${rows} linhas em ${finished.length} jogos encerrados.`);
   if (playerMiss.size) log(`Jogadores sem match (${playerMiss.size}) - ex: ${[...playerMiss].slice(0, 10).join(", ")}`);
+  if (!dry) for (const [id, photoUrl] of photoUpdates) await prisma.player.update({ where: { id }, data: { photoUrl } });
 
   // ---- 3) RECOMPUTA TOTAIS + carimba o horário do último sync ----
   if (!dry) {

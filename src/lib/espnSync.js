@@ -138,6 +138,7 @@ export async function syncEspn({ prisma, sinceDays = null, includeLive = false, 
   };
 
   target = events.filter((e) => (e.finished || (includeLive && e.state === "in")) && matchFor(e));
+  const photoUpdates = new Map();
   for (const ev of target) {
     const m = matchFor(ev);
     let sum;
@@ -148,6 +149,8 @@ export async function syncEspn({ prisma, sinceDays = null, includeLive = false, 
       for (const r of block.roster || []) {
         const p = find(teamApp, r.athlete?.displayName);
         if (!p) { semMatch.add(`${r.athlete?.displayName} (${teamApp})`); continue; }
+        const photo = r.athlete?.headshot?.href;
+        if (photo && p.photoUrl !== photo) photoUpdates.set(p.id, photo);
         targets.push({ p, teamId, athId: r.athlete?.id });
       }
     }
@@ -187,6 +190,7 @@ export async function syncEspn({ prisma, sinceDays = null, includeLive = false, 
       }
     }
   }
+  if (!dry) for (const [id, photoUrl] of photoUpdates) await prisma.player.update({ where: { id }, data: { photoUrl } });
   } // fim do bloco scoresOnly (scout)
 
   if (!dry) {

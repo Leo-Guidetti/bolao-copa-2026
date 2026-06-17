@@ -68,6 +68,7 @@ model Player {
   team     String
   position String // GOL | ZAG | LAT | MEI | ATA
   price    Float  @default(5)
+  photoUrl String? // foto (headshot) do jogador, quando a ESPN tem
 
   // scout acumulado na competição
   goals      Int @default(0)

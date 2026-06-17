@@ -95,8 +95,9 @@ function Slot({ slot, camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPo
     <div className={`flex w-14 flex-col items-center gap-1 sm:w-16 ${onPlayer ? "cursor-pointer" : ""}`} onClick={onPlayer ? () => onPlayer(player) : undefined} title={onPlayer ? "Ver pontuação" : undefined}>
       <span className="relative">
         <span className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 bg-[var(--surface)] shadow ${isMine ? "border-emerald-400 ring-2 ring-emerald-400" : "border-white"}`}>
-          {flag ? <img src={flag} alt={player.team} className="h-full w-full object-cover" /> : <span className="text-[10px] font-bold text-[var(--muted)]">{pos}</span>}
+          {player.photoUrl ? <img src={player.photoUrl} alt={player.name} className="h-full w-full object-cover object-top" /> : <svg viewBox="0 0 24 24" className="h-6 w-6 text-[var(--faint)]" fill="currentColor"><circle cx="12" cy="9" r="4" /><path d="M4 20.5c0-4.1 3.6-6.5 8-6.5s8 2.4 8 6.5V21H4z" /></svg>}
         </span>
+        {flag && <span className="absolute -bottom-1 -left-1 h-4 w-4 overflow-hidden rounded-full ring-2 ring-[var(--surface)]"><img src={flag} alt={player.team} className="h-full w-full object-cover" /></span>}
 
         {/* Botão camisa 10 (ou selo estático no modo leitura) */}
         {onToggleCaptain ? (
