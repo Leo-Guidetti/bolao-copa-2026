@@ -39,8 +39,8 @@ export default function RankingTable({ ranked = [], prizeByPlace = {}, wB = 0.7,
           <th className="px-4 py-3 font-medium">#</th>
           <th className="px-4 py-3 font-medium">Participante</th>
           <Th id="bets" className="hidden px-4 py-3 text-right font-medium sm:table-cell">Placar ({pctBets}%)</Th>
-          <Th id="squad" className="hidden px-4 py-3 text-right font-medium sm:table-cell">Seleção ({pctSquad}%)</Th>
           <Th id="cravadas" className="px-2 py-3 text-center font-medium" title="Cravadas (placar exato)">🎯</Th>
+          <Th id="squad" className="hidden px-4 py-3 text-right font-medium sm:table-cell">Seleção ({pctSquad}%)</Th>
           <Th id="final" className="px-4 py-3 text-right font-medium">Final</Th>
           <th className="px-4 py-3 text-right font-medium">Prêmio</th>
         </tr>
@@ -64,8 +64,8 @@ export default function RankingTable({ ranked = [], prizeByPlace = {}, wB = 0.7,
                   </span>
                 </td>
                 <td className="hidden px-4 py-3 text-right tabular-nums sm:table-cell">{r.betPts.toFixed(1)}</td>
-                <td className="hidden px-4 py-3 text-right tabular-nums sm:table-cell">{r.squadPts.toFixed(1)}</td>
                 <td className="px-2 py-3 text-center font-semibold tabular-nums">{r.cravadas || 0}</td>
+                <td className="hidden px-4 py-3 text-right tabular-nums sm:table-cell">{r.squadPts.toFixed(1)}</td>
                 <td className="px-4 py-3 text-right font-semibold tabular-nums">{r.final.toFixed(1)}</td>
                 <td className="px-4 py-3 text-right tabular-nums text-brand-dark">{prizeByPlace[r.place] ? brl(prizeByPlace[r.place]) : "—"}</td>
               </tr>
