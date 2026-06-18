@@ -185,7 +185,7 @@ export default async function HomePage() {
             <PlayerAvatar player={craque.player} size="md" />
             <div className="min-w-0 flex-1">
               <div className="truncate font-semibold">{craque.player.name}</div>
-              <div className="truncate text-xs text-[var(--faint)]">{craque.player.position} · {craque.player.team} · {craque.match.homeTeam} {craque.match.homeScore}×{craque.match.awayScore} {craque.match.awayTeam}</div>
+              <div className="truncate text-xs text-[var(--faint)]">{craque.player.position} · {craque.player.team} · {teamAbbr(craque.match.homeTeam)} {craque.match.homeScore}×{craque.match.awayScore} {teamAbbr(craque.match.awayTeam)}</div>
             </div>
             <div className="shrink-0 text-2xl font-bold text-brand-dark">{craque.pts.toFixed(1)}<span className="text-sm font-normal text-[var(--muted)]"> pts</span></div>
           </div>
