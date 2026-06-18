@@ -217,6 +217,10 @@ export async function run({ prisma, dry = false, log = console.log }) {
         penaltiesMissed: penMissed,                  // pênalti perdido
         saves: cval(cats, "goalKeeping", "saves"),
         penaltiesSaved: cval(cats, "goalKeeping", "penaltyKicksSaved"),
+        shootOutSaved: cval(cats, "goalKeeping", "shootOutKicksSaved"), // defesa de pênalti na disputa
+        blockedShots: cval(cats, "defensive", "blockedShots"),
+        foulsSuffered: cval(cats, "general", "foulsSuffered"),
+        foulsCommitted: cval(cats, "general", "foulsCommitted"),
         tackles: cval(cats, "defensive", "totalTackles"),
         interceptions: cval(cats, "defensive", "interceptions"),
         yellow: cval(cats, "general", "yellowCards"),
@@ -255,7 +259,7 @@ export async function run({ prisma, dry = false, log = console.log }) {
 }
 
 export async function recomputeTotals(prisma) {
-  const ALL = ["goals", "assists", "cleanSheet", "saves", "yellow", "red", "ownGoals", "shots", "shotsOnTarget", "shotsOnPost", "tackles", "interceptions", "penaltiesSaved", "penaltiesMissed", "goalsConceded"];
+  const ALL = ["goals", "assists", "cleanSheet", "saves", "yellow", "red", "ownGoals", "shots", "shotsOnTarget", "shotsOnPost", "tackles", "interceptions", "penaltiesSaved", "penaltiesMissed", "shootOutSaved", "blockedShots", "foulsSuffered", "foulsCommitted", "goalsConceded"];
   const grouped = await prisma.matchPlayerStat.groupBy({ by: ["playerId"], _sum: Object.fromEntries(ALL.map((f) => [f, true])) });
   for (const g of grouped) {
     await prisma.player.update({ where: { id: g.playerId }, data: Object.fromEntries(ALL.map((f) => [f, g._sum[f] || 0])) });

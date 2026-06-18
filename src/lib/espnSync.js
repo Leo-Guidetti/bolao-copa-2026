@@ -178,6 +178,9 @@ export async function syncEspn({ prisma, sinceDays = null, includeLive = false, 
         goals: gls, assists: cval(cats, "offensive", "goalAssists"),
         shots: offTarget, shotsOnTarget: Math.max(0, onTarget - gls), shotsOnPost: firstGame ? 0 : onPost, penaltiesMissed: penMissed,
         saves: cval(cats, "goalKeeping", "saves"), penaltiesSaved: cval(cats, "goalKeeping", "penaltyKicksSaved"),
+        shootOutSaved: cval(cats, "goalKeeping", "shootOutKicksSaved"),
+        blockedShots: cval(cats, "defensive", "blockedShots"),
+        foulsSuffered: cval(cats, "general", "foulsSuffered"), foulsCommitted: cval(cats, "general", "foulsCommitted"),
         tackles: cval(cats, "defensive", "totalTackles"), interceptions: cval(cats, "defensive", "interceptions"),
         yellow: cval(cats, "general", "yellowCards"), red: cval(cats, "general", "redCards"), ownGoals: cval(cats, "general", "ownGoals"),
         minutes, cleanSheet: (minutes > 0 && teamConceded === 0 && ["GOL", "ZAG", "LAT"].includes(p.position)) ? 1 : 0,
@@ -210,7 +213,7 @@ export async function syncEspn({ prisma, sinceDays = null, includeLive = false, 
 }
 
 async function recomputeTotals(prisma) {
-  const ALL = ["goals", "assists", "cleanSheet", "saves", "yellow", "red", "ownGoals", "shots", "shotsOnTarget", "shotsOnPost", "tackles", "interceptions", "penaltiesSaved", "penaltiesMissed", "goalsConceded"];
+  const ALL = ["goals", "assists", "cleanSheet", "saves", "yellow", "red", "ownGoals", "shots", "shotsOnTarget", "shotsOnPost", "tackles", "interceptions", "penaltiesSaved", "penaltiesMissed", "shootOutSaved", "blockedShots", "foulsSuffered", "foulsCommitted", "goalsConceded"];
   const grouped = await prisma.matchPlayerStat.groupBy({ by: ["playerId"], _sum: Object.fromEntries(ALL.map((f) => [f, true])) });
   for (const g of grouped) await prisma.player.update({ where: { id: g.playerId }, data: Object.fromEntries(ALL.map((f) => [f, g._sum[f] || 0])) });
   // Zera só quem NÃO tem nenhuma linha de stat (evita janela com tudo zerado durante o sync).

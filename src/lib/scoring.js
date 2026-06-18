@@ -32,7 +32,8 @@ export function betPoints(bet, match, scoring) {
 
   // Critério separado: acertar a quantidade de gols de um dos times (independe do resultado).
   // Não soma no placar exato, que já é o máximo. Entra antes do multiplicador para "pontuar igual" ao saldo em todas as fases.
-  if (!exact && oneTeamMatch) base += scoring.teamGoalsBonus ?? 0;
+  // Bônus de cravar os gols de um time: +2 na 1ª rodada de grupos, +1 da 2ª rodada em diante.
+  if (!exact && oneTeamMatch) base += (match.stage === "GROUP" && match.round === 1) ? (scoring.teamGoalsBonus ?? 0) : (scoring.teamGoalsBonusLate ?? 1);
 
   const mult = scoring.phaseMultipliers?.[match.stage] ?? 1;
   let pts = base * mult;
@@ -60,6 +61,10 @@ export function playerScore(player, scout) {
   sum += n("shotsOnPost") * v("shotOnPost");
   sum += n("shots") * v("shot");
   sum += n("penaltiesMissed") * v("penaltyMissed");
+  sum += n("blockedShots") * v("blockedShot");
+  sum += n("foulsSuffered") * v("foulSuffered");
+  sum += n("foulsCommitted") * v("foulCommitted");
+  sum += n("shootOutSaved") * v("shootOutSaved");
   // Desarme + Interceptacao = scout unico
   sum += (n("tackles") + n("interceptions")) * v("tackleInterception");
   sum += n("cleanSheet") * v("cleanSheet");
@@ -83,7 +88,11 @@ const SCOUT_EVENTS = [
   { key: "cleanSheet", label: "Sem sofrer gol", stat: "cleanSheet" },
   { key: "save", label: "Defesa", stat: "saves" },
   { key: "penaltySaved", label: "Defesa de pênalti", stat: "penaltiesSaved" },
+  { key: "shootOutSaved", label: "Defesa de pênalti (disputa)", stat: "shootOutSaved" },
   { key: "penaltyMissed", label: "Pênalti perdido", stat: "penaltiesMissed" },
+  { key: "blockedShot", label: "Finalização bloqueada", stat: "blockedShots" },
+  { key: "foulSuffered", label: "Falta sofrida", stat: "foulsSuffered" },
+  { key: "foulCommitted", label: "Falta cometida", stat: "foulsCommitted" },
   { key: "yellow", label: "Cartão amarelo", stat: "yellow" },
   { key: "red", label: "Cartão vermelho", stat: "red" },
   { key: "ownGoal", label: "Gol contra", stat: "ownGoals" },

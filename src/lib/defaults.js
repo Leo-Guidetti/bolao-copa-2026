@@ -29,7 +29,7 @@ export const SQUAD_SIZE = 16;
 
 export const DEFAULT_SETTINGS = {
   scoring: {
-    exactScore: 10, winnerGoalDiff: 7, winnerOnly: 5, teamGoalsBonus: 2, miss: 0,
+    exactScore: 10, winnerGoalDiff: 7, winnerOnly: 5, teamGoalsBonus: 2, teamGoalsBonusLate: 1, miss: 0,
     phaseMultipliers: { GROUP: 1.0, R32: 1.25, R16: 1.5, QF: 2.0, SF: 2.5, THIRD: 3.0, FINAL: 3.0 },
     zebraBonus: 0,
   },
@@ -42,11 +42,15 @@ export const DEFAULT_SETTINGS = {
       shotOnTarget: { GOL: 1, ZAG: 1, LAT: 1, MEI: 1, ATA: 1 },
       shot: { GOL: 0.5, ZAG: 0.5, LAT: 0.5, MEI: 0.5, ATA: 0.5 },
       shotOnPost: { GOL: 3, ZAG: 3, LAT: 3, MEI: 3, ATA: 3 },
+      blockedShot: { GOL: 1, ZAG: 1, LAT: 1, MEI: 1, ATA: 1 },
+      foulSuffered: { GOL: 0.5, ZAG: 0.5, LAT: 0.5, MEI: 0.5, ATA: 0.5 },
+      foulCommitted: { GOL: -0.3, ZAG: -0.3, LAT: -0.3, MEI: -0.3, ATA: -0.3 },
       penaltyMissed: { GOL: -3, ZAG: -3, LAT: -3, MEI: -3, ATA: -3 },
       tackleInterception: { GOL: 0, ZAG: 1, LAT: 1, MEI: 1, ATA: 0 },
       cleanSheet: { GOL: 5, ZAG: 5, LAT: 5, MEI: 0, ATA: 0 },
       save: { GOL: 1.5, ZAG: 0, LAT: 0, MEI: 0, ATA: 0 },
       penaltySaved: { GOL: 8, ZAG: 0, LAT: 0, MEI: 0, ATA: 0 },
+      shootOutSaved: { GOL: 2, ZAG: 2, LAT: 2, MEI: 2, ATA: 2 },
       yellow: { GOL: -1, ZAG: -1, LAT: -1, MEI: -1, ATA: -1 },
       red: { GOL: -3, ZAG: -3, LAT: -3, MEI: -3, ATA: -3 },
       ownGoal: { GOL: -5, ZAG: -5, LAT: -5, MEI: -5, ATA: -5 },

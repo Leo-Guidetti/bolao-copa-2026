@@ -33,7 +33,7 @@ export default function RankingTable({ ranked = [], prizeByPlace = {}, wB = 0.7,
   );
 
   return (
-    <table className="w-full text-sm">
+    <table className="w-full text-xs sm:text-sm">
       <thead className="bg-[var(--hover)] text-left text-[var(--muted)]">
         <tr>
           <th className="px-4 py-3 font-medium">#</th>

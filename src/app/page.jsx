@@ -211,7 +211,7 @@ export default async function HomePage() {
             <>Ainda sem premiação definida.</>
           )}
         </div>
-        <div className="mt-3 divide-y divide-[var(--border)]">
+        <div className="mt-3 divide-y divide-[var(--border)] text-xs sm:text-sm">
           {prizes.map((pz) => {
             const r = ranked[pz.place - 1];
             const isMe = r && r.participantId === me.id;

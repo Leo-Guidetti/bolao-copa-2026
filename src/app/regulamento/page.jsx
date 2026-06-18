@@ -12,11 +12,15 @@ const SCOUT_ROWS = [
   { key: "assist", label: "Assistência" },
   { key: "shotOnTarget", label: "Finalização no alvo" },
   { key: "shotOnPost", label: "Finalização na trave" },
+  { key: "blockedShot", label: "Finalização bloqueada" },
   { key: "shot", label: "Finalização (pra fora)" },
+  { key: "foulSuffered", label: "Falta sofrida" },
+  { key: "foulCommitted", label: "Falta cometida" },
   { key: "tackleInterception", label: "Desarme / interceptação" },
   { key: "cleanSheet", label: "Não sofrer gol (jogo inteiro)" },
   { key: "save", label: "Defesa (goleiro)" },
   { key: "penaltySaved", label: "Defesa de pênalti" },
+  { key: "shootOutSaved", label: "Defesa de pênalti (na disputa)" },
   { key: "penaltyMissed", label: "Pênalti perdido" },
   { key: "goalConceded", label: "Gol sofrido (goleiro)" },
   { key: "yellow", label: "Cartão amarelo" },
@@ -80,12 +84,13 @@ export default async function RegulamentoPage() {
               <tr><td className="p-2.5">Acertou o <b>vencedor + o saldo de gols</b></td><td className="p-2.5 text-right"><Pts n={sc.winnerGoalDiff} /></td></tr>
               <tr><td className="p-2.5">Acertou <b>só o vencedor</b> (ou só que foi empate)</td><td className="p-2.5 text-right"><Pts n={sc.winnerOnly} /></td></tr>
               <tr><td className="p-2.5">Errou o resultado</td><td className="p-2.5 text-right"><Pts n={sc.miss} /></td></tr>
-              <tr><td className="p-2.5">➕ <b>Bônus:</b> cravou os gols de <b>um</b> dos times (mesmo errando o resultado)</td><td className="p-2.5 text-right"><Pts n={sc.teamGoalsBonus} /></td></tr>
+              <tr><td className="p-2.5">➕ <b>Bônus:</b> cravou os gols de <b>um</b> dos times (mesmo errando o resultado) <span className="text-[var(--faint)]">— 1ª rodada / 2ª rodada em diante</span></td><td className="p-2.5 text-right"><Pts n={sc.teamGoalsBonus} /> <span className="text-[var(--faint)]">/</span> <Pts n={sc.teamGoalsBonusLate ?? 1} /></td></tr>
             </tbody>
           </table>
         </div>
         <p className="mt-2 text-xs text-[var(--faint)]">
           O bônus de cravar os gols de um time soma em cima das outras faixas, <b>menos</b> no placar exato (que já é o máximo).
+          Ele vale <b>+{sc.teamGoalsBonus}</b> na 1ª rodada da fase de grupos e <b>+{sc.teamGoalsBonusLate ?? 1}</b> da 2ª rodada em diante.
           Previu empate e o jogo terminou empatado, mas com placar diferente? Vale como “só o vencedor” ({sc.winnerOnly} pts) —
           saldo de empate é sempre 0.
         </p>
@@ -149,7 +154,7 @@ export default async function RegulamentoPage() {
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-xs text-[var(--faint)]">GOL = goleiro · ZAG = zagueiro · LAT = lateral · MEI = meia · ATA = atacante. “—” quer dizer que aquela jogada não pontua pra essa posição. A <b>finalização na trave</b> só passa a contar a partir do <b>2º jogo</b> de cada seleção.</p>
+        <p className="mt-2 text-xs text-[var(--faint)]">GOL = goleiro · ZAG = zagueiro · LAT = lateral · MEI = meia · ATA = atacante. “—” quer dizer que aquela jogada não pontua pra essa posição. A <b>finalização na trave</b> só passa a contar a partir do <b>2º jogo</b> de cada seleção. Finalização bloqueada, faltas (sofrida/cometida) e defesa de pênalti na disputa passaram a valer a partir da <b>2ª rodada</b> da fase de grupos.</p>
 
         <h3 className="mt-4 text-sm font-semibold">Exemplos de pontuação no jogo</h3>
         <div className="mt-2 space-y-1.5 text-sm">
