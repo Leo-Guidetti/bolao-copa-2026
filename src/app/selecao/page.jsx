@@ -297,7 +297,7 @@ export default function SelecaoPage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,340px)_1fr]">
         <div>
           {viewMode === "campo" ? (
-            <Pitch formation={formation} starters={starterPlayers} reserves={reservePlayers} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={readOnly ? undefined : toggleCaptain} onRemove={readOnly ? undefined : removePlayer} showPoints={readOnly} pointsOf={(pl) => ptsOf(pl) * (pl.id === camisa10Id ? capMult : 1)} />
+            <Pitch formation={formation} starters={starterPlayers} reserves={reservePlayers} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={readOnly ? undefined : toggleCaptain} onRemove={readOnly ? undefined : removePlayer} showPoints={readOnly} pointsOf={(pl) => ptsOf(pl) * (pl.id === camisa10Id ? capMult : 1)} onPlayer={setDetail} />
           ) : (
             <div className="space-y-3">
               <div className="card overflow-hidden p-0">

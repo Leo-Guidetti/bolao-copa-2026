@@ -81,7 +81,7 @@ function Slot({ slot, camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPo
   if (!player) {
     return (
       <div className="flex w-14 flex-col items-center gap-1 sm:w-16">
-        <span className={`flex h-10 w-10 items-center justify-center rounded-full border-2 border-dashed text-[10px] font-semibold ${dark ? "border-[var(--border)] text-[var(--faint)]" : "border-white/40 text-white/60"}`}>
+        <span className={`flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed text-[10px] font-semibold ${dark ? "border-[var(--border)] text-[var(--faint)]" : "border-white/40 text-white/60"}`}>
           {pos}
         </span>
         <span className={`text-[10px] ${dark ? "text-[var(--faint)]" : "text-white/50"}`}>{POSITION_LABELS[pos]}</span>
@@ -94,14 +94,14 @@ function Slot({ slot, camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPo
   return (
     <div className={`flex w-14 flex-col items-center gap-1 sm:w-16 ${onPlayer ? "cursor-pointer" : ""}`} onClick={onPlayer ? () => onPlayer(player) : undefined} title={onPlayer ? "Ver pontuação" : undefined}>
       <span className="relative">
-        <span className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 bg-[var(--surface)] shadow ${isMine ? "border-emerald-400 ring-2 ring-emerald-400" : "border-white"}`}>
-          {player.photoUrl ? <img src={player.photoUrl} alt={player.name} className="h-full w-full object-cover object-top" /> : <svg viewBox="0 0 24 24" className="h-6 w-6 text-[var(--faint)]" fill="currentColor"><circle cx="12" cy="9" r="4" /><path d="M4 20.5c0-4.1 3.6-6.5 8-6.5s8 2.4 8 6.5V21H4z" /></svg>}
+        <span className={`flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-2 bg-[var(--surface)] shadow ${isMine ? "border-emerald-400 ring-2 ring-emerald-400" : "border-white"}`}>
+          {player.photoUrl ? <img src={player.photoUrl} alt={player.name} className="h-full w-full object-cover object-top" /> : <svg viewBox="0 0 24 24" className="h-7 w-7 text-[var(--faint)]" fill="currentColor"><circle cx="12" cy="9" r="4" /><path d="M4 20.5c0-4.1 3.6-6.5 8-6.5s8 2.4 8 6.5V21H4z" /></svg>}
         </span>
-        {flag && <span className="absolute -bottom-1 -left-1 h-4 w-4 overflow-hidden rounded-full ring-2 ring-[var(--surface)]"><img src={flag} alt={player.team} className="h-full w-full object-cover" /></span>}
+        {flag && <span className="absolute -bottom-1 -left-1 h-5 w-5 overflow-hidden rounded-full ring-2 ring-[var(--surface)]"><img src={flag} alt={player.team} className="h-full w-full object-cover" /></span>}
 
         {/* Botão camisa 10 (ou selo estático no modo leitura) */}
         {onToggleCaptain ? (
-          <button type="button" onClick={() => onToggleCaptain(player.id)} title="Definir/remover camisa 10"
+          <button type="button" onClick={(e) => { e.stopPropagation(); onToggleCaptain(player.id); }} title="Definir/remover camisa 10"
             className={`absolute -left-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-extrabold shadow transition ${isCap ? "bg-accent text-[var(--text)]" : "bg-black/55 text-white/80 hover:bg-black/75"}`}>
             10
           </button>
@@ -111,7 +111,7 @@ function Slot({ slot, camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPo
 
         {/* Botão remover do time */}
         {onRemove && (
-          <button type="button" onClick={() => onRemove(player.id)} title="Remover do time" aria-label="Remover do time"
+          <button type="button" onClick={(e) => { e.stopPropagation(); onRemove(player.id); }} title="Remover do time" aria-label="Remover do time"
             className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[11px] font-bold leading-none text-white shadow transition hover:bg-red-600">
             ×
           </button>
