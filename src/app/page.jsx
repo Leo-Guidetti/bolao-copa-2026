@@ -28,7 +28,7 @@ export default async function HomePage() {
     );
   }
 
-  const { ranked, prizes, totalPot, settings } = await computeStandings();
+  const { ranked, prizes, totalPot, bestSquad, settings } = await computeStandings();
   const cashIn = settings.entry?.amount ?? 50;
   const sc = settings.scoring, sq = settings.squadRules;
   const wB = settings.ranking.weightBets, wS = settings.ranking.weightSquad, sumW = (wB + wS) || 1;
@@ -217,7 +217,7 @@ export default async function HomePage() {
             const isMe = r && r.participantId === me.id;
             const need = r && !isMe ? r.final - myRow.final : null; // quanto EU preciso pra passar esse
             return (
-              <div key={pz.place} className={`flex items-center gap-2 py-2 ${isMe ? "rounded-lg bg-emerald-500/10 font-semibold outline outline-2 -outline-offset-2 outline-emerald-500" : ""}`}>
+              <div key={pz.place} className={`flex items-center gap-2 py-2 px-2 ${isMe ? "rounded-lg bg-emerald-500/10 font-semibold outline outline-2 -outline-offset-2 outline-emerald-500" : ""}`}>
                 <span className="w-7 text-lg">{medal[pz.place - 1] || "💰"}</span>
                 <span className="flex-1 truncate">{r ? r.name : "—"} {isMe && <span className="pill bg-emerald-500/15 text-emerald-600">você</span>}</span>
                 <span className="tabular-nums text-[var(--muted)]">{r ? r.final.toFixed(1) : "—"} pts{need != null && need > 0 && <span className="ml-1 text-[10px] font-normal text-[var(--faint)]">(-{need.toFixed(1)})</span>}</span>
@@ -227,6 +227,21 @@ export default async function HomePage() {
           })}
         </div>
         <a href="/ranking" className="mt-3 inline-block text-sm text-brand">Ver ranking completo →</a>
+      </section>
+
+      {/* 4b. Prêmio extra: melhor seleção */}
+      <section className="card border-l-4 border-l-accent p-5">
+        <div className="flex items-center gap-2">
+          <h2 className="font-semibold">🌟 Prêmio da melhor seleção</h2>
+          <span className="pill bg-accent/20 font-semibold text-yellow-700">{brl(bestSquad.amount)}</span>
+        </div>
+        <p className="mt-1 text-xs text-[var(--muted)]">À parte do bolo geral — vai pra quem terminar com a melhor “Minha seleção”.</p>
+        <div className={`mt-3 flex items-center gap-2 rounded-lg px-2 py-2 text-xs sm:text-sm ${bestSquad.participantId === me.id ? "bg-emerald-500/10 font-semibold outline outline-2 -outline-offset-2 outline-emerald-500" : "bg-[var(--hover)]"}`}>
+          <span className="w-7 text-lg">🌟</span>
+          <span className="flex-1 truncate">{bestSquad.name || "A definir"} {bestSquad.participantId === me.id && <span className="pill bg-emerald-500/15 text-emerald-600">você</span>}</span>
+          <span className="tabular-nums text-[var(--muted)]">{bestSquad.name ? `${bestSquad.squadPts.toFixed(1)} pts` : "—"}</span>
+          <span className="w-24 text-right tabular-nums text-yellow-700">{brl(bestSquad.amount)}</span>
+        </div>
       </section>
 
       {/* 5. Leigo Master */}

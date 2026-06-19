@@ -12,7 +12,7 @@ function brl(n) {
 const medal = ["🥇", "🥈", "🥉"];
 
 export default async function RankingPage() {
-  const { ranked, totalPot, prizes, settings } = await computeStandings();
+  const { ranked, totalPot, prizes, bestSquad, settings } = await computeStandings();
   const me = await currentParticipant();
   const wB = settings.ranking.weightBets, wS = settings.ranking.weightSquad, sumW = (wB + wS) || 1;
   const pctBets = Math.round((wB / sumW) * 100), pctSquad = Math.round((wS / sumW) * 100);
@@ -45,12 +45,25 @@ export default async function RankingPage() {
               <div className="text-xl font-semibold">{brl(p.amount)}</div>
             </div>
           ))}
+          {/* Prêmio extra: melhor seleção */}
+          <div className="rounded-xl bg-accent/15 p-4 ring-1 ring-inset ring-accent/40 sm:col-span-3">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-yellow-700">🌟 Melhor seleção</div>
+                <div className="mt-0.5 text-sm text-[var(--muted)]">
+                  {bestSquad?.name ? <>Liderando: <b className="text-[var(--text)]">{bestSquad.name}</b> · {bestSquad.squadPts.toFixed(1)} pts de seleção</> : "Ainda a definir"}
+                </div>
+              </div>
+              <div className="text-xl font-semibold text-yellow-700">{brl(bestSquad.amount)}</div>
+            </div>
+          </div>
         </div>
+        <p className="mt-3 text-xs text-[var(--faint)]">A melhor “Minha seleção” leva {brl(bestSquad.amount)} (tirados R$ 15 de cada colocação do 1º ao 4º).</p>
       </section>
 
       {/* Tabela de ranking */}
       <section className="card overflow-hidden">
-        <RankingTable ranked={ranked} prizeByPlace={prizeByPlace} wB={wB} wS={wS} pctBets={pctBets} pctSquad={pctSquad} meId={me?.id} />
+        <RankingTable ranked={ranked} prizeByPlace={prizeByPlace} wB={wB} wS={wS} pctBets={pctBets} pctSquad={pctSquad} meId={me?.id} bestSquadId={bestSquad?.participantId} bestSquadPrize={bestSquad?.amount} />
       </section>
 
       <p className="text-center text-xs text-[var(--faint)]">

@@ -13,7 +13,7 @@ const brl = (n) => (n || 0).toLocaleString("pt-BR", { style: "currency", currenc
 const fmtW = (w) => String(w);
 const placeBadge = (place, prized) => (place <= 3 ? medal[place - 1] : prized ? "💰" : `${place}º`);
 
-export default function RankingTable({ ranked = [], prizeByPlace = {}, wB = 0.7, wS = 0.3, pctBets = 70, pctSquad = 30, meId = null }) {
+export default function RankingTable({ ranked = [], prizeByPlace = {}, wB = 0.7, wS = 0.3, pctBets = 70, pctSquad = 30, meId = null, bestSquadId = null, bestSquadPrize = 0 }) {
   const [open, setOpen] = useState(null);
   const [sort, setSort] = useState("final"); // final | bets | squad | cravadas
 
@@ -52,6 +52,7 @@ export default function RankingTable({ ranked = [], prizeByPlace = {}, wB = 0.7,
           const sqShare = tot > 0 ? 100 - betShare : 0;
           const isOpen = open === r.participantId;
           const isMe = meId && r.participantId === meId;
+          const isBest = bestSquadId && r.participantId === bestSquadId;
           return (
             <Fragment key={r.participantId}>
               <tr onClick={() => setOpen(isOpen ? null : r.participantId)}
@@ -60,7 +61,7 @@ export default function RankingTable({ ranked = [], prizeByPlace = {}, wB = 0.7,
                 <td className="px-4 py-3 font-medium">
                   <span className="inline-flex items-center gap-1.5">
                     <span className={`text-[var(--faint)] transition-transform ${isOpen ? "rotate-90" : ""}`}>›</span>
-                    {r.name}{isMe && <span className="pill bg-emerald-500/15 text-[10px] font-bold text-emerald-600">você</span>}
+                    {r.name}{isMe && <span className="pill bg-emerald-500/15 text-[10px] font-bold text-emerald-600">você</span>}{isBest && <span className="pill bg-accent/20 text-[10px] font-bold text-yellow-700" title="Melhor seleção">🌟 {brl(bestSquadPrize)}</span>}
                   </span>
                 </td>
                 <td className="hidden px-4 py-3 text-right tabular-nums sm:table-cell">{r.betPts.toFixed(1)}</td>

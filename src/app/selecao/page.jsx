@@ -16,6 +16,7 @@ export default function SelecaoPage() {
   const [players, setPlayers] = useState([]);
   const [rules, setRules] = useState(null);
   const [ranking, setRanking] = useState(null);
+  const [prize, setPrize] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
   const [lock, setLock] = useState(null);
   const [formation, setFormation] = useState(DEFAULT_FORMATION);
@@ -36,7 +37,7 @@ export default function SelecaoPage() {
   useEffect(() => {
     fetch("/api/me").then((r) => r.json()).then(setMe);
     fetch("/api/players").then((r) => r.json()).then(setPlayers);
-    fetch("/api/settings").then((r) => r.json()).then((s) => { setRules(s.squadRules); setRanking(s.ranking); });
+    fetch("/api/settings").then((r) => r.json()).then((s) => { setRules(s.squadRules); setRanking(s.ranking); setPrize(s.prize); });
     fetch("/api/lock").then((r) => r.json()).then(setLock);
   }, []);
 
@@ -220,6 +221,20 @@ export default function SelecaoPage() {
       </div>
 
       <LeigoMaster context="selecao" />
+
+      <div className="card flex items-center justify-between gap-3 border-l-4 border-l-accent p-4">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🌟</span>
+          <div>
+            <div className="text-sm font-semibold">Prêmio da melhor seleção: {((prize?.bestSquadPrize ?? 60)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</div>
+            <div className="text-xs text-[var(--muted)]">Quem terminar com mais pontos de fantasy leva esse prêmio à parte.</div>
+          </div>
+        </div>
+        <div className="shrink-0 text-right">
+          <div className="text-lg font-bold tabular-nums">{teamPoints.toFixed(1)}</div>
+          <div className="text-[10px] text-[var(--faint)]">sua seleção</div>
+        </div>
+      </div>
 
       {showInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowInfo(false)}>

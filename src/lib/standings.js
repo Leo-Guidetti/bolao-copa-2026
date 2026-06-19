@@ -48,5 +48,17 @@ export async function computeStandings() {
   const totalPot = participants.length * cashIn;
   const prizes = prizeBreakdown(totalPot, settings.prize.distribution);
 
-  return { ranked, totalPot, prizes, settings };
+  // Prêmio da MELHOR SELEÇÃO: R$60, tirando R$15 de cada colocação do 1º ao 4º.
+  const BEST_SQUAD_PRIZE = settings.prize?.bestSquadPrize ?? 60;
+  const TAKE_FROM_EACH = settings.prize?.bestSquadTakeFromEach ?? 15;
+  for (const pz of prizes) if (pz.place >= 1 && pz.place <= 4) pz.amount = Math.max(0, pz.amount - TAKE_FROM_EACH);
+  // Melhor seleção = maior squadPts (entre quem tem seleção válida e pontuou).
+  let best = null;
+  for (const r of ranked) {
+    if (r.squadOver || !r.hasSquad || r.squadPts <= 0) continue;
+    if (!best || r.squadPts > best.squadPts) best = r;
+  }
+  const bestSquad = best ? { participantId: best.participantId, name: best.name, squadPts: best.squadPts, amount: BEST_SQUAD_PRIZE } : { participantId: null, name: null, squadPts: 0, amount: BEST_SQUAD_PRIZE };
+
+  return { ranked, totalPot, prizes, bestSquad, settings };
 }

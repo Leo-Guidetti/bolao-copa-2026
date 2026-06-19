@@ -187,7 +187,11 @@ export default async function RegulamentoPage() {
           {(settings.prize?.distribution || []).slice().sort((a, b) => a.place - b.place).map((d) => (
             <span key={d.place} className="pill bg-brand-light text-brand-dark">{d.place}º lugar — {d.pct}% do bolo</span>
           ))}
+          <span className="pill bg-accent/20 font-semibold text-yellow-700">🌟 Melhor seleção — {(settings.prize?.bestSquadPrize ?? 60).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
         </div>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          Novidade: quem terminar com a <b>melhor “Minha seleção”</b> (maior pontuação de fantasy) leva um prêmio à parte de {(settings.prize?.bestSquadPrize ?? 60).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}, formado tirando R$ 15 de cada colocação do 1º ao 4º.
+        </p>
         <p className="mt-3 text-xs text-[var(--faint)]">
           O valor da entrada (cash-in) é de {(settings.entry?.amount ?? 50).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} por participante e todo mundo entra no bolo.
           Em caso de empate na pontuação final, o desempate é: 1º) maior pontuação na seleção; 2º) maior pontuação nos palpites de placar.
