@@ -19,6 +19,10 @@ export default function PerfilPage() {
   const [savingPhoto, setSavingPhoto] = useState(false);
   const fileRef = useRef(null);
 
+  const [name, setName] = useState("");
+  const [nameMsg, setNameMsg] = useState("");
+  const [savingName, setSavingName] = useState(false);
+
   const [cur, setCur] = useState("");
   const [nw, setNw] = useState("");
   const [conf, setConf] = useState("");
@@ -26,8 +30,20 @@ export default function PerfilPage() {
   const [savingPw, setSavingPw] = useState(false);
 
   useEffect(() => {
-    fetch("/api/profile").then((r) => r.json()).then((p) => { setMe(p); setAvatarUrl(p?.avatarUrl || null); });
+    fetch("/api/profile").then((r) => r.json()).then((p) => { setMe(p); setAvatarUrl(p?.avatarUrl || null); setName(p?.name || ""); });
   }, []);
+
+  async function saveName() {
+    setNameMsg("");
+    const nm = name.trim();
+    if (nm.length < 2) return setNameMsg("❌ O nome precisa de ao menos 2 caracteres.");
+    setSavingName(true);
+    const res = await fetch("/api/profile", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: nm }) });
+    const data = await res.json();
+    setSavingName(false);
+    if (res.ok) { setMe((m) => ({ ...m, name: nm })); setNameMsg("✅ Nome atualizado!"); }
+    else setNameMsg("❌ " + (data.error || "Erro ao salvar nome."));
+  }
 
   async function onPick(e) {
     const file = e.target.files?.[0];
@@ -103,6 +119,16 @@ export default function PerfilPage() {
           <span className="text-lg text-brand">→</span>
         </a>
       )}
+
+      <section className="card space-y-3 p-6">
+        <h2 className="font-semibold">Nome de exibição</h2>
+        <p className="text-sm text-[var(--muted)]">É como você aparece no ranking e pros amigos.</p>
+        <input className="input" placeholder="Seu nome" maxLength={40} value={name} onChange={(e) => setName(e.target.value)} />
+        <div className="flex items-center gap-3">
+          <button className="btn-primary" disabled={savingName || !name.trim() || name.trim() === me.name} onClick={saveName}>{savingName ? "Salvando…" : "Salvar nome"}</button>
+          {nameMsg && <span className="text-sm text-brand-dark">{nameMsg}</span>}
+        </div>
+      </section>
 
       <section className="card space-y-3 p-6">
         <h2 className="font-semibold">Alterar senha</h2>

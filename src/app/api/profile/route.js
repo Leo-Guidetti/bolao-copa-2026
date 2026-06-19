@@ -17,6 +17,13 @@ export async function PATCH(req) {
 
   if (body.avatarUrl !== undefined) data.avatarUrl = body.avatarUrl || null;
 
+  if (body.name !== undefined) {
+    const nm = String(body.name).trim();
+    if (nm.length < 2) return Response.json({ error: "O nome precisa de ao menos 2 caracteres." }, { status: 400 });
+    if (nm.length > 40) return Response.json({ error: "Nome muito longo (máx. 40 caracteres)." }, { status: 400 });
+    data.name = nm;
+  }
+
   if (body.newPassword) {
     if (String(body.newPassword).length < 6) return Response.json({ error: "A nova senha precisa de ao menos 6 caracteres." }, { status: 400 });
     if (!p.passwordHash || !(await bcrypt.compare(String(body.currentPassword || ""), p.passwordHash)))
