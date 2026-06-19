@@ -157,7 +157,8 @@ export async function run({ prisma, dry = false, log = console.log }) {
   // Scout (pesado: stats por jogador) só dos jogos MAIS RECENTES — recém-encerrados (≤ ~6h, janela
   // que cobre o último jogo + os que acabaram de terminar) + os em andamento. Os placares de TODOS
   // os jogos já foram atualizados acima (chamada barata); o scout de jogos antigos não muda mais.
-  const RECENT_MS = 6 * 3600 * 1000;
+  // Janela do scout pesado: 6h por padrão; SYNC_SINCE_HOURS permite um backfill pontual (ex.: 72) sem mudar código.
+  const RECENT_MS = (Number(process.env.SYNC_SINCE_HOURS) || 6) * 3600 * 1000;
   const finished = events.filter((e) => {
     const m = matchFor(e);
     if (!m) return false;
@@ -217,10 +218,10 @@ export async function run({ prisma, dry = false, log = console.log }) {
         penaltiesMissed: penMissed,                  // pênalti perdido
         saves: cval(cats, "goalKeeping", "saves"),
         penaltiesSaved: cval(cats, "goalKeeping", "penaltyKicksSaved"),
-        shootOutSaved: cval(cats, "goalKeeping", "shootOutKicksSaved"), // defesa de pênalti na disputa
-        blockedShots: cval(cats, "defensive", "blockedShots"),
-        foulsSuffered: cval(cats, "general", "foulsSuffered"),
-        foulsCommitted: cval(cats, "general", "foulsCommitted"),
+        shootOutSaved: firstGame ? 0 : cval(cats, "goalKeeping", "shootOutKicksSaved"), // defesa de pênalti na disputa (só da 2ª rodada)
+        blockedShots: firstGame ? 0 : cval(cats, "defensive", "outfielderBlock"), // bloqueio FEITO pelo jogador (só da 2ª rodada)
+        foulsSuffered: firstGame ? 0 : cval(cats, "general", "foulsSuffered"),
+        foulsCommitted: firstGame ? 0 : cval(cats, "general", "foulsCommitted"),
         tackles: cval(cats, "defensive", "totalTackles"),
         interceptions: cval(cats, "defensive", "interceptions"),
         yellow: cval(cats, "general", "yellowCards"),

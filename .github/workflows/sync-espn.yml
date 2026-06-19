@@ -5,7 +5,12 @@ name: Sync ESPN (Copa 2026)
 on:
   schedule:
     - cron: "0 * * * *" # de hora em hora (horário UTC)
-  workflow_dispatch: {} # permite rodar na mão pelo painel do GitHub
+  workflow_dispatch: # permite rodar na mão pelo painel do GitHub
+    inputs:
+      since_hours:
+        description: "Backfill: re-processar scout dos jogos das últimas N horas (padrão 6). Use 72 p/ recalcular ontem."
+        required: false
+        default: "6"
 
 jobs:
   sync:
@@ -25,6 +30,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          SYNC_SINCE_HOURS: ${{ github.event.inputs.since_hours || '6' }}
       # Preenche as fotos dos jogadores (ESPN + API-Football), incremental e prioriza escalados/preço.
       # Só roda a parte da API-Football se o secret APIFOOTBALL_KEY existir; é resumível e respeita a cota.
       - run: node scripts/backfill-photos.mjs

@@ -90,7 +90,7 @@ const SCOUT_EVENTS = [
   { key: "penaltySaved", label: "Defesa de pênalti", stat: "penaltiesSaved" },
   { key: "shootOutSaved", label: "Defesa de pênalti (disputa)", stat: "shootOutSaved" },
   { key: "penaltyMissed", label: "Pênalti perdido", stat: "penaltiesMissed" },
-  { key: "blockedShot", label: "Finalização bloqueada", stat: "blockedShots" },
+  { key: "blockedShot", label: "Bloqueio de finalização", stat: "blockedShots" },
   { key: "foulSuffered", label: "Falta sofrida", stat: "foulsSuffered" },
   { key: "foulCommitted", label: "Falta cometida", stat: "foulsCommitted" },
   { key: "yellow", label: "Cartão amarelo", stat: "yellow" },

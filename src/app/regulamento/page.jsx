@@ -12,7 +12,7 @@ const SCOUT_ROWS = [
   { key: "assist", label: "Assistência" },
   { key: "shotOnTarget", label: "Finalização no alvo" },
   { key: "shotOnPost", label: "Finalização na trave" },
-  { key: "blockedShot", label: "Finalização bloqueada" },
+  { key: "blockedShot", label: "Bloqueio de finalização" },
   { key: "shot", label: "Finalização (pra fora)" },
   { key: "foulSuffered", label: "Falta sofrida" },
   { key: "foulCommitted", label: "Falta cometida" },
@@ -154,7 +154,7 @@ export default async function RegulamentoPage() {
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-xs text-[var(--faint)]">GOL = goleiro · ZAG = zagueiro · LAT = lateral · MEI = meia · ATA = atacante. “—” quer dizer que aquela jogada não pontua pra essa posição. A <b>finalização na trave</b> só passa a contar a partir do <b>2º jogo</b> de cada seleção. Finalização bloqueada, faltas (sofrida/cometida) e defesa de pênalti na disputa passaram a valer a partir da <b>2ª rodada</b> da fase de grupos.</p>
+        <p className="mt-2 text-xs text-[var(--faint)]">GOL = goleiro · ZAG = zagueiro · LAT = lateral · MEI = meia · ATA = atacante. “—” quer dizer que aquela jogada não pontua pra essa posição. A <b>finalização na trave</b> só passa a contar a partir do <b>2º jogo</b> de cada seleção. O bloqueio de finalização (feito pelo defensor), as faltas (sofrida/cometida) e a defesa de pênalti na disputa passaram a valer a partir da <b>2ª rodada</b> da fase de grupos.</p>
 
         <h3 className="mt-4 text-sm font-semibold">Exemplos de pontuação no jogo</h3>
         <div className="mt-2 space-y-1.5 text-sm">
