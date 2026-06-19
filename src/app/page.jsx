@@ -151,26 +151,26 @@ export default async function HomePage() {
 
       {/* 2. Big numbers — seus stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="card p-4">
+        <a href="/ranking" className="card p-4 transition hover:bg-[var(--hover)]">
           <div className="text-xs text-[var(--muted)]">Sua posição</div>
           <div className="mt-1 text-2xl font-bold">{medal[myRow.place - 1] || (myRow.place <= N ? "💰" : `${myRow.place}º`)}</div>
           <div className="text-xs text-[var(--faint)]">de {total} {total === 1 ? "jogador" : "jogadores"}</div>
-        </div>
-        <div className="card p-4">
+        </a>
+        <a href="/ranking" className="card p-4 transition hover:bg-[var(--hover)]">
           <div className="text-xs text-[var(--muted)]">Pontos (total)</div>
           <div className="mt-1 text-2xl font-bold">{myRow.final.toFixed(1)}</div>
           <div className="text-xs text-[var(--faint)]">{pctBets}% placar + {pctSquad}% seleção</div>
-        </div>
-        <div className="card p-4">
+        </a>
+        <a href="/apostas" className="card p-4 transition hover:bg-[var(--hover)]">
           <div className="text-xs text-[var(--muted)]">Apostas</div>
           <div className="mt-1 text-2xl font-bold">{myRow.betPts.toFixed(1)}</div>
           <div className="text-xs text-[var(--faint)]">vale {pctBets}% do ranking</div>
-        </div>
-        <div className="card p-4">
+        </a>
+        <a href="/selecao" className="card p-4 transition hover:bg-[var(--hover)]">
           <div className="text-xs text-[var(--muted)]">Seleção</div>
           <div className="mt-1 text-2xl font-bold">{myRow.squadPts.toFixed(1)}</div>
           <div className="text-xs text-[var(--faint)]">vale {pctSquad}% do ranking</div>
-        </div>
+        </a>
       </div>
 
       {/* 3. Craque do dia */}
