@@ -41,7 +41,7 @@ export default function AdminPage() {
   }
 
   async function syncScoutNow() {
-    setScoutBusy(true); setSyncMsg("Atualizando scouts dos jogadores (últimas 24h)… pode levar até 1 min.");
+    setScoutBusy(true); setSyncMsg("Atualizando scouts dos 2 jogos mais recentes…");
     try {
       const r = await fetch("/api/admin/sync", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ scout: true }) });
       const d = await r.json();

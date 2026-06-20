@@ -67,7 +67,7 @@ function parseEvent(e) {
   };
 }
 
-export async function syncEspn({ prisma, sinceDays = null, includeLive = false, dry = false, log = () => {}, concurrency = 8, scoresOnly = false, scoutSinceHours = null }) {
+export async function syncEspn({ prisma, sinceDays = null, includeLive = false, dry = false, log = () => {}, concurrency = 8, scoresOnly = false, scoutSinceHours = null, scoutMaxGames = null }) {
   const dates = dateList(sinceDays);
   const byId = new Map();
   for (const dt of dates) {
@@ -144,6 +144,12 @@ export async function syncEspn({ prisma, sinceDays = null, includeLive = false, 
     if (scoutSinceHours != null) return Date.now() - new Date(matchFor(e).kickoff).getTime() <= scoutSinceHours * 3600 * 1000;
     return true;
   });
+  // Limita o scout aos N jogos mais recentes (sempre mantém os ao vivo). Usado no botão de admin pra ficar rápido.
+  if (scoutMaxGames != null) {
+    const live = target.filter((e) => e.state === "in");
+    const fin = target.filter((e) => e.state !== "in").sort((a, b) => new Date(matchFor(b).kickoff) - new Date(matchFor(a).kickoff)).slice(0, scoutMaxGames);
+    target = [...live, ...fin];
+  }
   // Correções manuais que devem sobreviver ao sync: Setting "statOverrides" = { "matchId:playerId": { campo: valor } }
   let statOverrides = {};
   try { statOverrides = JSON.parse((await prisma.setting.findUnique({ where: { key: "statOverrides" } }))?.value || "{}"); } catch {}
