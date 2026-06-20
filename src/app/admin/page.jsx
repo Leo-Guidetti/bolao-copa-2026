@@ -26,17 +26,28 @@ export default function AdminPage() {
   const [leigoBusy, setLeigoBusy] = useState(false);
   const [leigoMsg, setLeigoMsg] = useState("");
   const [syncBusy, setSyncBusy] = useState(false);
+  const [scoutBusy, setScoutBusy] = useState(false);
   const [syncMsg, setSyncMsg] = useState("");
   useEffect(() => { fetch("/api/me").then((r) => r.json()).then(setMe); }, []);
 
   async function syncEspnNow() {
-    setSyncBusy(true); setSyncMsg("Puxando placares e parciais da ESPN…");
+    setSyncBusy(true); setSyncMsg("Puxando placares da ESPN…");
     try {
-      const r = await fetch("/api/admin/sync", { method: "POST" });
+      const r = await fetch("/api/admin/sync", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ scout: false }) });
       const d = await r.json();
-      setSyncMsg(r.ok ? `✓ ${d.placares} placar(es) e ${d.scoutLinhas} linhas de scout em ${d.jogos} jogo(s).` : `❌ ${d.error || "erro"}`);
+      setSyncMsg(r.ok ? `✓ ${d.placares} placar(es) atualizado(s).` : `❌ ${d.error || "erro"}`);
     } catch { setSyncMsg("❌ falha/timeout — tente de novo em alguns segundos."); }
     setSyncBusy(false);
+  }
+
+  async function syncScoutNow() {
+    setScoutBusy(true); setSyncMsg("Atualizando scouts dos jogadores (últimas 24h)… pode levar até 1 min.");
+    try {
+      const r = await fetch("/api/admin/sync", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ scout: true }) });
+      const d = await r.json();
+      setSyncMsg(r.ok ? `✓ ${d.placares} placar(es) e ${d.scoutLinhas} linha(s) de scout em ${d.jogos} jogo(s).` : `❌ ${d.error || "erro"}`);
+    } catch { setSyncMsg("❌ falha/timeout — tente de novo (o scout é mais pesado)."); }
+    setScoutBusy(false);
   }
 
   async function regenLeigo() {
@@ -68,7 +79,8 @@ export default function AdminPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-bold tracking-tight">Admin</h1>
-        <button className="btn-ghost ml-auto" onClick={syncEspnNow} disabled={syncBusy}>{syncBusy ? "Atualizando…" : "🔄 Atualizar resultados"}</button>
+        <button className="btn-ghost ml-auto" onClick={syncEspnNow} disabled={syncBusy || scoutBusy}>{syncBusy ? "Atualizando…" : "🔄 Atualizar placares"}</button>
+        <button className="btn-ghost" onClick={syncScoutNow} disabled={syncBusy || scoutBusy}>{scoutBusy ? "Atualizando scouts…" : "📊 Atualizar scouts"}</button>
         <button className="btn-ghost" onClick={regenLeigo} disabled={leigoBusy}>{leigoBusy ? "Gerando…" : "🎤 Atualizar Leigo Master"}</button>
       </div>
       {syncMsg && <p className="text-sm text-[var(--muted)]">{syncMsg}</p>}

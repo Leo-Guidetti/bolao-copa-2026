@@ -75,7 +75,9 @@ if (KEY) {
   const todo = Object.keys(teams)
     .filter((t) => !doneSet.has(t) && teams[t].some((p) => !p.photoUrl))
     .sort((a, b) => prio(b) - prio(a));
+  const DEADLINE = Date.now() + (Number(process.env.PHOTO_BUDGET_MS) || 150000); // ~2,5 min por run (resumível pelo doneSet)
   for (const team of todo) {
+    if (Date.now() > DEADLINE) { console.log("Teto de tempo das fotos atingido — retoma na próxima rodada."); break; }
     const en = PT_EN[team] || team;
     try {
       const ts = await af(`/teams?search=${encodeURIComponent(en)}`); rem = ts.rem;

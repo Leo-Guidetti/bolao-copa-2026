@@ -67,7 +67,7 @@ function parseEvent(e) {
   };
 }
 
-export async function syncEspn({ prisma, sinceDays = null, includeLive = false, dry = false, log = () => {}, concurrency = 8, scoresOnly = false }) {
+export async function syncEspn({ prisma, sinceDays = null, includeLive = false, dry = false, log = () => {}, concurrency = 8, scoresOnly = false, scoutSinceHours = null }) {
   const dates = dateList(sinceDays);
   const byId = new Map();
   for (const dt of dates) {
@@ -137,7 +137,13 @@ export async function syncEspn({ prisma, sinceDays = null, includeLive = false, 
     return uniq(list.filter((x) => x.tokens.some((t) => t.length >= 4 && toks.some((u) => u.length >= 4 && tokMatch(t, u)))));
   };
 
-  target = events.filter((e) => (e.finished || (includeLive && e.state === "in")) && matchFor(e));
+  target = events.filter((e) => {
+    if (!matchFor(e)) return false;
+    if (includeLive && e.state === "in") return true;
+    if (!e.finished) return false;
+    if (scoutSinceHours != null) return Date.now() - new Date(matchFor(e).kickoff).getTime() <= scoutSinceHours * 3600 * 1000;
+    return true;
+  });
   // Correções manuais que devem sobreviver ao sync: Setting "statOverrides" = { "matchId:playerId": { campo: valor } }
   let statOverrides = {};
   try { statOverrides = JSON.parse((await prisma.setting.findUnique({ where: { key: "statOverrides" } }))?.value || "{}"); } catch {}
