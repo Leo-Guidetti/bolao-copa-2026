@@ -185,19 +185,36 @@ export default function SimuladorPage() {
                     <h3 className="font-semibold">Grupo {k}</h3>
                     {tb.complete && <span className="pill bg-brand-light text-[10px] text-brand-dark">completo</span>}
                   </div>
-                  <table className="w-full text-xs">
-                    <thead className="text-[var(--faint)]"><tr><th className="text-left font-medium">Time</th><th className="w-7 text-center font-medium">P</th><th className="w-7 text-center font-medium">V</th><th className="w-8 text-center font-medium">SG</th><th className="w-7 text-center font-medium">Pts</th></tr></thead>
+                  <table className="w-full text-[11px]">
+                    <thead className="text-[var(--faint)]">
+                      <tr>
+                        <th className="py-1 text-left font-medium" colSpan={2}>Equipe</th>
+                        <th className="px-1 text-center font-semibold text-[var(--muted)]">Pts</th>
+                        <th className="px-1 text-center font-medium">J</th>
+                        <th className="px-1 text-center font-medium">V</th>
+                        <th className="px-1 text-center font-medium">E</th>
+                        <th className="px-1 text-center font-medium">D</th>
+                        <th className="px-1 text-center font-medium">GP</th>
+                        <th className="px-1 text-center font-medium">GC</th>
+                        <th className="px-1 text-center font-medium">SG</th>
+                      </tr>
+                    </thead>
                     <tbody>
                       {tb.standings.map((r, i) => {
                         const thirdQual = i === 2 && thirdsInfo?.top8set.has(k);
                         const cls = i < 2 ? "bg-emerald-500/10" : thirdQual ? "bg-amber-500/15" : i === 2 ? "bg-[var(--hover)]" : "";
                         return (
                           <tr key={r.team} className={cls}>
-                            <td className="flex items-center gap-1.5 py-1"><span className="w-3 text-[10px] text-[var(--faint)]">{i + 1}</span><MiniFlag team={r.team} /><span className="truncate">{teamAbbr(r.team)}</span></td>
-                            <td className="text-center tabular-nums">{r.P}</td>
-                            <td className="text-center tabular-nums">{r.W}</td>
-                            <td className="text-center tabular-nums">{r.GD > 0 ? `+${r.GD}` : r.GD}</td>
-                            <td className="text-center font-semibold tabular-nums">{r.Pts}</td>
+                            <td className="w-3 py-1 text-center text-[10px] text-[var(--faint)]">{i + 1}</td>
+                            <td className="py-1"><span className="flex items-center gap-1.5"><MiniFlag team={r.team} /><span className="truncate">{teamAbbr(r.team)}</span></span></td>
+                            <td className="px-1 text-center font-bold tabular-nums">{r.Pts}</td>
+                            <td className="px-1 text-center tabular-nums">{r.P}</td>
+                            <td className="px-1 text-center tabular-nums">{r.W}</td>
+                            <td className="px-1 text-center tabular-nums">{r.D}</td>
+                            <td className="px-1 text-center tabular-nums">{r.L}</td>
+                            <td className="px-1 text-center tabular-nums">{r.GF}</td>
+                            <td className="px-1 text-center tabular-nums">{r.GA}</td>
+                            <td className="px-1 text-center tabular-nums">{r.GD > 0 ? `+${r.GD}` : r.GD}</td>
                           </tr>
                         );
                       })}
@@ -223,28 +240,35 @@ export default function SimuladorPage() {
           </div>
           <p className="mt-1 text-sm text-[var(--muted)]">Os <b>8 melhores</b> avançam (pontos → saldo → gols). Sem confronto direto, pois são de grupos diferentes.{thirdsInfo.provisional ? " Muda conforme os jogos que faltam." : ""}</p>
           <div className="mt-3 overflow-hidden rounded-xl border border-[var(--border)]">
-            <table className="w-full text-sm">
+            <table className="w-full text-xs sm:text-sm">
               <thead className="bg-[var(--hover)] text-left text-[var(--faint)]">
                 <tr>
-                  <th className="px-2 py-2 font-medium">#</th>
-                  <th className="px-1 py-2 font-medium">Seleção</th>
-                  <th className="px-2 py-2 text-center font-medium">Gr.</th>
-                  <th className="w-8 px-1 py-2 text-center font-medium">P</th>
-                  <th className="w-8 px-1 py-2 text-center font-medium">V</th>
-                  <th className="w-10 px-1 py-2 text-center font-medium">SG</th>
-                  <th className="w-9 px-1 py-2 text-center font-medium">Pts</th>
+                  <th className="px-1.5 py-2 font-medium" colSpan={2}>Seleção</th>
+                  <th className="px-1.5 py-2 text-center font-medium">Gr.</th>
+                  <th className="px-1 py-2 text-center font-semibold text-[var(--muted)]">Pts</th>
+                  <th className="px-1 py-2 text-center font-medium">J</th>
+                  <th className="px-1 py-2 text-center font-medium">V</th>
+                  <th className="px-1 py-2 text-center font-medium">E</th>
+                  <th className="px-1 py-2 text-center font-medium">D</th>
+                  <th className="px-1 py-2 text-center font-medium">GP</th>
+                  <th className="px-1 py-2 text-center font-medium">GC</th>
+                  <th className="px-1 py-2 text-center font-medium">SG</th>
                 </tr>
               </thead>
               <tbody>
                 {thirdsInfo.ranked.map((t, i) => (
                   <tr key={t.group} className={`border-t border-[var(--border)] ${i < 8 ? "bg-emerald-500/10" : "text-[var(--muted)] opacity-70"} ${i === 7 ? "border-b-2 border-dashed border-emerald-500/50" : ""}`}>
-                    <td className="px-2 py-1.5 tabular-nums">{i + 1}</td>
+                    <td className="w-4 px-1.5 py-1.5 text-center text-[10px] text-[var(--faint)]">{i + 1}</td>
                     <td className="px-1 py-1.5"><span className="flex items-center gap-1.5"><MiniFlag team={t.row.team} /><span className="truncate font-medium">{teamAbbr(t.row.team)}</span></span></td>
-                    <td className="px-2 py-1.5 text-center">{t.group}</td>
+                    <td className="px-1.5 py-1.5 text-center">{t.group}</td>
+                    <td className="px-1 py-1.5 text-center font-bold tabular-nums">{t.row.Pts}</td>
                     <td className="px-1 py-1.5 text-center tabular-nums">{t.row.P}</td>
                     <td className="px-1 py-1.5 text-center tabular-nums">{t.row.W}</td>
+                    <td className="px-1 py-1.5 text-center tabular-nums">{t.row.D}</td>
+                    <td className="px-1 py-1.5 text-center tabular-nums">{t.row.L}</td>
+                    <td className="px-1 py-1.5 text-center tabular-nums">{t.row.GF}</td>
+                    <td className="px-1 py-1.5 text-center tabular-nums">{t.row.GA}</td>
                     <td className="px-1 py-1.5 text-center tabular-nums">{t.row.GD > 0 ? `+${t.row.GD}` : t.row.GD}</td>
-                    <td className="px-1 py-1.5 text-center font-semibold tabular-nums">{t.row.Pts}</td>
                   </tr>
                 ))}
               </tbody>
