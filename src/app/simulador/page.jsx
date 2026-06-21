@@ -119,16 +119,16 @@ export default function SimuladorPage() {
       const isW = w && tm === w && picks[no] === side;
       return (
         <button type="button" disabled={!tm} onClick={() => pick(no, side, tm)}
-          className={`flex w-full items-center gap-1.5 px-2 py-1.5 text-left transition ${isW ? "bg-emerald-500/15 font-semibold text-emerald-700" : tm ? "hover:bg-[var(--hover)]" : "opacity-40"}`}>
-          <MiniFlag team={tm} /><span className="truncate text-xs">{tm ? teamAbbr(tm) : "—"}</span>
+          className={`flex w-full items-center gap-1 px-1.5 py-1 text-left transition ${isW ? "bg-emerald-500/15 font-semibold text-emerald-700" : tm ? "hover:bg-[var(--hover)]" : "opacity-40"}`}>
+          <MiniFlag team={tm} /><span className="truncate text-[11px]">{tm ? teamAbbr(tm) : "—"}</span>
         </button>
       );
     };
     return (
-      <div className="relative w-32 shrink-0 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+      <div className="relative w-[76px] shrink-0 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)]">
         <Row side="a" /><div className="border-t border-[var(--border)]" /><Row side="b" />
-        {dir === "r" && <span className="pointer-events-none absolute left-full top-1/2 h-px w-3 bg-[var(--border)]" />}
-        {dir === "l" && <span className="pointer-events-none absolute right-full top-1/2 h-px w-3 bg-[var(--border)]" />}
+        {dir === "r" && <span className="pointer-events-none absolute left-full top-1/2 h-px w-2 bg-[var(--border)]" />}
+        {dir === "l" && <span className="pointer-events-none absolute right-full top-1/2 h-px w-2 bg-[var(--border)]" />}
       </div>
     );
   }
@@ -287,7 +287,7 @@ export default function SimuladorPage() {
             {champion && <span className="pill bg-accent/20 font-semibold text-yellow-700">🏆 {teamAbbr(champion)}</span>}
           </div>
           <div className="overflow-x-auto pb-2">
-            <div className="flex items-stretch gap-3" style={{ minHeight: "560px" }}>
+            <div className="flex items-stretch justify-center gap-1.5 sm:gap-2" style={{ minHeight: "560px" }}>
               <Col title="16-avos" nos={L_R32} dir="r" />
               <Col title="Oitavas" nos={L_R16} dir="r" />
               <Col title="Quartas" nos={L_QF} dir="r" />
