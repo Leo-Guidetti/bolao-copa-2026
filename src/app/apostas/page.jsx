@@ -38,12 +38,14 @@ function Flag({ team, align }) {
   );
 }
 
-function Row({ m, g, lock, onChange, scoring, onOpen, now = Date.now() }) {
+function Row({ m, g, savedG, lock, onChange, onSaveOne, savingId, scoring, onOpen, now = Date.now() }) {
   const done = m.finished && m.homeScore != null && m.awayScore != null;
   const tbd = m.homeTeam === "A definir" || m.awayTeam === "A definir";
   const lockAt = new Date(m.kickoff).getTime() - BET_LOCK_MS;
   const showCount = !done && !tbd && now < lockAt;
   const hasGuess = g && g.home !== "" && g.home != null && g.away !== "" && g.away != null;
+  const isSaved = hasGuess && savedG && String(savedG.home) === String(g.home) && String(savedG.away) === String(g.away);
+  const pending = hasGuess && !isSaved;
   const pts = done && hasGuess && scoring ? betPoints({ homeGuess: Number(g.home), awayGuess: Number(g.away) }, m, scoring) : 0;
   return (
     <div className={`py-2 ${lock ? "cursor-pointer opacity-80 hover:bg-[var(--hover)]" : ""}`} onClick={lock && onOpen ? () => onOpen(m) : undefined} title={lock ? "Ver palpites de todos" : undefined}>
@@ -59,10 +61,11 @@ function Row({ m, g, lock, onChange, scoring, onOpen, now = Date.now() }) {
         <div className="flex-1"><Flag team={m.awayTeam} /></div>
       </div>
       {!done && (
-        <div className="mt-1 text-center">
-          {hasGuess
-            ? <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-500">✓ Palpite salvo · {g.home}×{g.away}</span>
-            : <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-semibold text-red-500">⚠ Palpite faltante</span>}
+        <div className="mt-1 flex items-center justify-center gap-2">
+          {isSaved && <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-500">✓ Salvo · {g.home}×{g.away}</span>}
+          {pending && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] font-semibold text-amber-600">● Não salvo</span>}
+          {!hasGuess && <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-semibold text-red-500">⚠ Sem palpite</span>}
+          {pending && !lock && <button type="button" onClick={(e) => { e.stopPropagation(); onSaveOne(m.id); }} disabled={savingId === m.id} className="rounded-full bg-brand px-3 py-0.5 text-[11px] font-semibold text-white transition hover:bg-brand-dark disabled:opacity-60">{savingId === m.id ? "Salvando…" : "Salvar"}</button>}
         </div>
       )}
       {done && (
@@ -81,6 +84,8 @@ export default function ApostasPage() {
   const [me, setMe] = useState(undefined);
   const [matches, setMatches] = useState([]);
   const [guesses, setGuesses] = useState({});
+  const [saved, setSaved] = useState({});
+  const [savingId, setSavingId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const [weights, setWeights] = useState(null);
@@ -101,6 +106,7 @@ export default function ApostasPage() {
       const g = {};
       for (const b of bets) g[b.matchId] = { home: b.homeGuess, away: b.awayGuess };
       setGuesses(g);
+      setSaved(JSON.parse(JSON.stringify(g)));
     });
   }, [me]);
 
@@ -119,25 +125,49 @@ export default function ApostasPage() {
   }, [matches, guesses, scoring]);
   const tbd = (m) => m.homeTeam === "A definir" || m.awayTeam === "A definir";
   const locked = (m) => m.finished || tbd(m) || new Date(m.kickoff).getTime() - BET_LOCK_MS <= now;
+  const pendingCount = useMemo(() => {
+    let n = 0;
+    for (const m of matches) {
+      if (m.finished || tbd(m) || new Date(m.kickoff).getTime() - BET_LOCK_MS <= now) continue;
+      const g = guesses[m.id];
+      if (!g || g.home === "" || g.away === "" || g.home == null || g.away == null) continue;
+      const s = saved[m.id];
+      if (!s || String(s.home) !== String(g.home) || String(s.away) !== String(g.away)) n++;
+    }
+    return n;
+  }, [matches, guesses, saved, now]);
   const guessesRef = useRef({});
   useEffect(() => { guessesRef.current = guesses; }, [guesses]);
-  const saveTimer = useRef(null);
 
-  async function doSave() {
+  async function reloadSaved() {
+    const bets = await (await fetch("/api/bets")).json();
+    const g = {};
+    for (const b of bets) g[b.matchId] = { home: b.homeGuess, away: b.awayGuess };
+    setSaved(g);
+  }
+  async function saveOne(id) {
+    const v = guessesRef.current[id];
+    if (!v || v.home === "" || v.away === "" || v.home == null || v.away == null) return;
+    setSavingId(id); setMsg("");
+    const res = await fetch("/api/bets", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bets: [{ matchId: id, homeGuess: v.home, awayGuess: v.away }] }) });
+    setSavingId(null);
+    if (res.ok) setSaved((s) => ({ ...s, [id]: { home: v.home, away: v.away } }));
+    else { const d = await res.json().catch(() => ({})); setMsg(d.error || "Erro ao salvar (prazo pode ter encerrado)."); }
+  }
+  async function saveAll() {
     const g = guessesRef.current;
     const bets = Object.entries(g)
       .filter(([, v]) => v && v.home !== "" && v.away !== "" && v.home != null && v.away != null)
       .map(([matchId, v]) => ({ matchId, homeGuess: v.home, awayGuess: v.away }));
     if (!bets.length) return;
-    setSaving(true);
+    setSaving(true); setMsg("");
     const res = await fetch("/api/bets", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bets }) });
     const data = await res.json().catch(() => ({}));
     setSaving(false);
-    setMsg(res.ok ? `✓ Salvo (${data.saved})` : (data.error || "Erro ao salvar."));
+    if (res.ok) { await reloadSaved(); setMsg(`✓ ${data.saved} salvo(s)`); }
+    else setMsg(data.error || "Erro ao salvar.");
   }
-  const scheduleSave = () => { clearTimeout(saveTimer.current); saveTimer.current = setTimeout(doSave, 900); };
-  const save = doSave;
-  const setGuess = (id, side, v) => { setGuesses((g) => ({ ...g, [id]: { ...g[id], [side]: v === "" ? "" : Math.max(0, Number(v)) } })); scheduleSave(); };
+  const setGuess = (id, side, v) => setGuesses((g) => ({ ...g, [id]: { ...g[id], [side]: v === "" ? "" : Math.max(0, Number(v)) } }));
 
   const groups = useMemo(() => {
     const g = {};
@@ -177,7 +207,7 @@ export default function ApostasPage() {
       {openMatch && <MatchBets match={openMatch} onClose={() => setOpenMatch(null)} />}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Apostas de Placar</h1>
-        <p className="mt-1 text-[var(--muted)]">Calendário completo por grupo e rodada. Cada palpite trava 1 min antes do apito inicial do jogo. <span className="text-[var(--faint)]">Valem {pctBets}% da pontuação final.</span></p>
+        <p className="mt-1 text-[var(--muted)]">Calendário completo por grupo e rodada. <b className="text-[var(--text)]">Clique em "Salvar" em cada palpite</b> (ou em "Salvar todos"). Cada palpite trava 1 min antes do apito. <span className="text-[var(--faint)]">Valem {pctBets}% da pontuação final.</span></p>
       </div>
 
       <div className="card sticky top-16 z-10 flex flex-wrap items-center gap-3 p-4">
@@ -188,8 +218,8 @@ export default function ApostasPage() {
           <button type="button" onClick={() => setViewMode("grupos")} className={`rounded-full px-3 py-1 transition ${viewMode === "grupos" ? "bg-[var(--surface)] font-semibold shadow" : "text-[var(--muted)]"}`}>Por grupo</button>
         </div>
         <div className="ml-auto flex items-center gap-3">
-          <span className="text-xs text-[var(--faint)]">{saving ? "Salvando…" : (msg || "Salva automaticamente")}</span>
-          <button className="btn-primary" onClick={save} disabled={saving}>Salvar agora</button>
+          <span className="text-xs text-[var(--faint)]">{saving ? "Salvando…" : (msg || (pendingCount ? `${pendingCount} não salvo(s)` : "Tudo salvo ✓"))}</span>
+          <button className="btn-primary" onClick={saveAll} disabled={saving || !pendingCount}>Salvar todos{pendingCount ? ` (${pendingCount})` : ""}</button>
         </div>
       </div>
 
@@ -209,7 +239,7 @@ export default function ApostasPage() {
               {[1, 2, 3].map((r) => (
                 <div key={r} className="mt-2">
                   <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--faint)]">Rodada {r}</div>
-                  <div className="divide-y divide-[var(--border)]">{(groups[gl][r] || []).map((m) => <Row key={m.id} m={m} g={guesses[m.id] || {}} lock={locked(m)} onChange={setGuess} scoring={scoring} onOpen={setOpenMatch} now={now} />)}</div>
+                  <div className="divide-y divide-[var(--border)]">{(groups[gl][r] || []).map((m) => <Row key={m.id} m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} />)}</div>
                 </div>
               ))}
             </div>
@@ -224,7 +254,7 @@ export default function ApostasPage() {
             <div key={s} className="card p-4">
               <h3 className="mb-2 font-semibold">{STAGE_LABELS[s]}</h3>
               <div className="divide-y divide-[var(--border)]">
-                {knockout[s].map((m, i) => (<div key={m.id}><div className="pt-2 text-[11px] text-[var(--faint)]">Jogo {i + 1}</div><Row m={m} g={guesses[m.id] || {}} lock={locked(m)} onChange={setGuess} scoring={scoring} onOpen={setOpenMatch} now={now} /></div>))}
+                {knockout[s].map((m, i) => (<div key={m.id}><div className="pt-2 text-[11px] text-[var(--faint)]">Jogo {i + 1}</div><Row m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} /></div>))}
               </div>
               <p className="mt-2 text-xs text-[var(--faint)]">Confrontos definidos após a fase de grupos.</p>
             </div>
@@ -258,7 +288,7 @@ export default function ApostasPage() {
                   {d.items.map((m) => (
                     <div key={m.id}>
                       <div className="pt-1 text-center text-[10px] font-medium text-[var(--muted)]">{tag(m)}</div>
-                      <Row m={m} g={guesses[m.id] || {}} lock={locked(m)} onChange={setGuess} scoring={scoring} onOpen={setOpenMatch} now={now} />
+                      <Row m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} />
                     </div>
                   ))}
                 </div>
