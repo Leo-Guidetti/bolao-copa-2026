@@ -294,17 +294,19 @@ export default function SimuladorPage() {
               <Col title="Semi" nos={L_SF} dir="r" />
               <div className="flex shrink-0 flex-col">
                 <h4 className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wide text-yellow-700">Final 🏆</h4>
-                <div className="flex flex-1 flex-col justify-around"><KOCard no={104} dir="none" /></div>
+                <div className="flex flex-1 flex-col items-center justify-center gap-5">
+                  <KOCard no={104} dir="none" />
+                  <div className="text-center">
+                    <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--faint)]">3º lugar</div>
+                    <KOCard no={103} dir="none" />
+                  </div>
+                </div>
               </div>
               <Col title="Semi" nos={R_SF} dir="l" />
               <Col title="Quartas" nos={R_QF} dir="l" />
               <Col title="Oitavas" nos={R_R16} dir="l" />
               <Col title="16-avos" nos={R_R32} dir="l" />
             </div>
-          </div>
-          <div className="mt-4 max-w-xs">
-            <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--faint)]">Disputa de 3º lugar</h4>
-            <KOCard no={103} last />
           </div>
         </section>
       )}
