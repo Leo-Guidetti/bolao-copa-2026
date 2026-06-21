@@ -106,24 +106,6 @@ export default function SimuladorPage() {
   if (!matches) return <p className="text-[var(--muted)]">Carregando…</p>;
   const champion = ko.winner[104];
 
-  // ---- jogo do grupo no estilo "palpites" ----
-  function GameRow({ m }) {
-    const s = scoreOf(m);
-    const played = s.real;
-    return (
-      <div className="py-2">
-        <div className="mb-0.5 text-center text-[10px] text-[var(--faint)]">{fmtDate(m)} (BRT){played ? " · 🔒 resultado" : ""}</div>
-        <div className="flex items-center gap-2">
-          <div className="flex-1"><Flag team={m.homeTeam} align="right" /></div>
-          <input inputMode="numeric" disabled={played} value={played ? s.hs : (sim[m.id]?.h ?? "")} onChange={(e) => setScore(m.id, "h", e.target.value)} className="input w-12 px-0 text-center disabled:opacity-100" />
-          <span className="text-[var(--faint)]">×</span>
-          <input inputMode="numeric" disabled={played} value={played ? s.as : (sim[m.id]?.a ?? "")} onChange={(e) => setScore(m.id, "a", e.target.value)} className="input w-12 px-0 text-center disabled:opacity-100" />
-          <div className="flex-1"><Flag team={m.awayTeam} /></div>
-        </div>
-      </div>
-    );
-  }
-
   // ---- card do chaveamento ----
   function KOCard({ no, last }) {
     const t = ko.teams[no] || {};
@@ -221,7 +203,21 @@ export default function SimuladorPage() {
                     </tbody>
                   </table>
                   <div className="mt-2 divide-y divide-[var(--border)] border-t border-[var(--border)]">
-                    {groups[k].games.map((m) => <GameRow key={m.id} m={m} />)}
+                    {groups[k].games.map((m) => {
+                      const s = scoreOf(m); const played = s.real;
+                      return (
+                        <div key={m.id} className="py-2">
+                          <div className="mb-0.5 text-center text-[10px] text-[var(--faint)]">{fmtDate(m)} (BRT){played ? " · 🔒 resultado" : ""}</div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1"><Flag team={m.homeTeam} align="right" /></div>
+                            <input inputMode="numeric" disabled={played} value={played ? s.hs : (sim[m.id]?.h ?? "")} onChange={(e) => setScore(m.id, "h", e.target.value)} className="input w-12 px-0 text-center disabled:opacity-100" />
+                            <span className="text-[var(--faint)]">×</span>
+                            <input inputMode="numeric" disabled={played} value={played ? s.as : (sim[m.id]?.a ?? "")} onChange={(e) => setScore(m.id, "a", e.target.value)} className="input w-12 px-0 text-center disabled:opacity-100" />
+                            <div className="flex-1"><Flag team={m.awayTeam} /></div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
