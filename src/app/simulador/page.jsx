@@ -287,7 +287,7 @@ export default function SimuladorPage() {
             {champion && <span className="pill bg-accent/20 font-semibold text-yellow-700">🏆 {teamAbbr(champion)}</span>}
           </div>
           <div className="overflow-x-auto pb-2">
-            <div className="flex items-stretch justify-center gap-1.5 sm:gap-2" style={{ minHeight: "560px" }}>
+            <div className="mx-auto flex w-max items-stretch gap-1.5 sm:gap-2" style={{ minHeight: "560px" }}>
               <Col title="16-avos" nos={L_R32} dir="r" />
               <Col title="Oitavas" nos={L_R16} dir="r" />
               <Col title="Quartas" nos={L_QF} dir="r" />
