@@ -81,7 +81,9 @@ if (KEY) {
     const en = PT_EN[team] || team;
     try {
       const ts = await af(`/teams?search=${encodeURIComponent(en)}`); rem = ts.rem;
-      const nat = (ts.j.response || []).find((x) => x.team?.national) || ts.j.response?.[0];
+      // exclui seleções FEMININAS ("X W" / "Women") e prefere a seleção masculina nacional com nome igual
+      const cands = (ts.j.response || []).filter((x) => x.team && !/(^|\s)W$/.test(x.team.name) && !/women/i.test(x.team.name));
+      const nat = cands.find((x) => x.team.national && norm(x.team.name) === norm(en)) || cands.find((x) => x.team.national) || cands.find((x) => norm(x.team.name) === norm(en)) || cands[0];
       if (!nat) { console.log(`  ${team}: seleção não encontrada na API-Football`); await markDone(team); }
       else {
         const sq = await af(`/players/squads?team=${nat.team.id}`); rem = sq.rem;
