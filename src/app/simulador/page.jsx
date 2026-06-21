@@ -68,12 +68,13 @@ export default function SimuladorPage() {
   const completeCount = groupKeys.filter((k) => tables[k]?.complete).length;
   const allComplete = groupKeys.length === 12 && completeCount === 12;
 
+  // Ranking dos terceiros: provisório (com os resultados que já existem) ou final quando os 12 grupos fecham.
   const thirdsInfo = useMemo(() => {
-    if (!allComplete) return null;
+    if (groupKeys.length !== 12) return null;
     const ranked = rankThirds(groupKeys.map((k) => ({ group: k, row: tables[k].standings[2] })));
     const top8 = ranked.slice(0, 8);
-    return { ranked, top8set: new Set(top8.map((t) => t.group)), alloc: thirdsByCol(top8.map((t) => t.group)) };
-  }, [allComplete, tables, groupKeys]);
+    return { ranked, top8set: new Set(top8.map((t) => t.group)), alloc: thirdsByCol(top8.map((t) => t.group)), provisional: !allComplete };
+  }, [tables, groupKeys, allComplete]);
 
   const teamForSlot = (slot) => {
     const t = tables[slot.g];
@@ -214,34 +215,31 @@ export default function SimuladorPage() {
       )}
 
       {/* TERCEIROS */}
-      {tab === "terceiros" && (
-        allComplete ? (
-          <section className="card p-5">
+      {tab === "terceiros" && thirdsInfo && (
+        <section className="card p-5">
+          <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-lg font-semibold">Ranking dos terceiros</h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">Os <b>8 melhores</b> avançam (pontos → saldo → gols). Sem confronto direto, pois são de grupos diferentes.</p>
-            <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
-              {thirdsInfo.ranked.map((t, i) => (
-                <div key={t.group} className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${i < 8 ? "bg-emerald-500/10" : "bg-[var(--hover)] opacity-70"}`}>
-                  <span className="w-5 text-xs text-[var(--faint)]">{i + 1}º</span>
-                  <MiniFlag team={t.row.team} /><span className="flex-1 truncate">{teamAbbr(t.row.team)} <span className="text-[var(--faint)]">· Grupo {t.group}</span></span>
-                  <span className="tabular-nums text-[var(--muted)]">{t.row.Pts} pts · {t.row.GD > 0 ? `+${t.row.GD}` : t.row.GD}</span>
-                  <span className={i < 8 ? "text-emerald-600" : "text-[var(--faint)]"}>{i < 8 ? "✓" : "✗"}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : (
-          <section className="card border-l-4 border-l-accent p-4 text-sm text-[var(--muted)]">
-            Complete os <b>12 grupos</b> na aba Grupos (faltam {12 - completeCount}) para ver o ranking dos terceiros.
-          </section>
-        )
+            {thirdsInfo.provisional && <span className="pill bg-amber-500/20 text-[11px] font-semibold text-amber-700">parcial · {completeCount}/12 grupos</span>}
+          </div>
+          <p className="mt-1 text-sm text-[var(--muted)]">Os <b>8 melhores</b> avançam (pontos → saldo → gols). Sem confronto direto, pois são de grupos diferentes.{thirdsInfo.provisional ? " Muda conforme os jogos que faltam." : ""}</p>
+          <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
+            {thirdsInfo.ranked.map((t, i) => (
+              <div key={t.group} className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${i < 8 ? "bg-emerald-500/10" : "bg-[var(--hover)] opacity-70"}`}>
+                <span className="w-5 text-xs text-[var(--faint)]">{i + 1}º</span>
+                <MiniFlag team={t.row.team} /><span className="flex-1 truncate">{teamAbbr(t.row.team)} <span className="text-[var(--faint)]">· Grupo {t.group}{tables[t.group].complete ? "" : " (parcial)"}</span></span>
+                <span className="tabular-nums text-[var(--muted)]">{t.row.Pts} pts · {t.row.GD > 0 ? `+${t.row.GD}` : t.row.GD}</span>
+                <span className={i < 8 ? "text-emerald-600" : "text-[var(--faint)]"}>{i < 8 ? "✓" : "✗"}</span>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* CHAVEAMENTO */}
       {tab === "chave" && (
         <section>
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-xs text-[var(--faint)]">Clique no time que avança. 1º/2º aparecem por grupo completo; os 3ºs entram com os 12 grupos definidos.</p>
+            <p className="text-xs text-[var(--faint)]">Clique no time que avança. 1º/2º aparecem por grupo completo; os 3ºs já entram de forma <b>parcial</b> conforme os resultados.</p>
             {champion && <span className="pill bg-accent/20 font-semibold text-yellow-700">🏆 {teamAbbr(champion)}</span>}
           </div>
           <div className="overflow-x-auto pb-2">
