@@ -39,6 +39,7 @@ export default function Nav() {
     { href: "/selecao", label: "Minha seleção" },
     { href: "/times", label: "Times" },
     { href: "/ideal", label: "Seleção ideal" },
+    { href: "/simulador", label: "Simulador" },
     { href: "/regulamento", label: "Regulamento" },
   ];
   const isActive = (href) => (href === "/" ? path === "/" : path.startsWith(href));
