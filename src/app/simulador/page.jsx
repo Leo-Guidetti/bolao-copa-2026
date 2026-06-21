@@ -5,11 +5,15 @@ import { flagUrl, teamAbbr } from "@/lib/flags";
 import { groupStandings, rankThirds } from "@/lib/groupTable";
 import { R32, LATER, STAGE_NAME, thirdsByCol } from "@/lib/bracket";
 
-// ordem de cima pra baixo em cada coluna do chaveamento (árvore conectada)
-const COL_R32 = [74, 77, 73, 75, 83, 84, 81, 82, 76, 78, 79, 80, 86, 88, 85, 87];
-const COL_R16 = [89, 90, 93, 94, 91, 92, 95, 96];
-const COL_QF = [97, 98, 99, 100];
-const COL_SF = [101, 102];
+// Chaveamento espelhado: metade esquerda (avança →) e metade direita (avança ←), final no centro.
+const L_R32 = [74, 77, 73, 75, 83, 84, 81, 82];
+const L_R16 = [89, 90, 93, 94];
+const L_QF = [97, 98];
+const L_SF = [101];
+const R_R32 = [76, 78, 79, 80, 86, 88, 85, 87];
+const R_R16 = [91, 92, 95, 96];
+const R_QF = [99, 100];
+const R_SF = [102];
 
 const fmtDate = (m) => new Date(m.kickoff).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
@@ -106,8 +110,8 @@ export default function SimuladorPage() {
   if (!matches) return <p className="text-[var(--muted)]">Carregando…</p>;
   const champion = ko.winner[104];
 
-  // ---- card do chaveamento ----
-  function KOCard({ no, last }) {
+  // ---- card do chaveamento ---- dir: "r" conector à direita | "l" à esquerda | "none"
+  function KOCard({ no, dir = "r" }) {
     const t = ko.teams[no] || {};
     const w = ko.winner[no];
     const Row = ({ side }) => {
@@ -123,14 +127,15 @@ export default function SimuladorPage() {
     return (
       <div className="relative w-32 shrink-0 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)]">
         <Row side="a" /><div className="border-t border-[var(--border)]" /><Row side="b" />
-        {!last && <span className="pointer-events-none absolute left-full top-1/2 h-px w-3 bg-[var(--border)]" />}
+        {dir === "r" && <span className="pointer-events-none absolute left-full top-1/2 h-px w-3 bg-[var(--border)]" />}
+        {dir === "l" && <span className="pointer-events-none absolute right-full top-1/2 h-px w-3 bg-[var(--border)]" />}
       </div>
     );
   }
-  const Col = ({ title, nos, last }) => (
+  const Col = ({ title, nos, dir }) => (
     <div className="flex shrink-0 flex-col">
       <h4 className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wide text-[var(--faint)]">{title}</h4>
-      <div className="flex flex-1 flex-col justify-around gap-2">{nos.map((no) => <KOCard key={no} no={no} last={last} />)}</div>
+      <div className="flex flex-1 flex-col justify-around gap-2">{nos.map((no) => <KOCard key={no} no={no} dir={dir} />)}</div>
     </div>
   );
 
@@ -282,12 +287,19 @@ export default function SimuladorPage() {
             {champion && <span className="pill bg-accent/20 font-semibold text-yellow-700">🏆 {teamAbbr(champion)}</span>}
           </div>
           <div className="overflow-x-auto pb-2">
-            <div className="flex items-stretch gap-3" style={{ minHeight: "520px" }}>
-              <Col title="16-avos" nos={COL_R32} />
-              <Col title="Oitavas" nos={COL_R16} />
-              <Col title="Quartas" nos={COL_QF} />
-              <Col title="Semi" nos={COL_SF} />
-              <Col title="Final" nos={[104]} last />
+            <div className="flex items-stretch gap-3" style={{ minHeight: "560px" }}>
+              <Col title="16-avos" nos={L_R32} dir="r" />
+              <Col title="Oitavas" nos={L_R16} dir="r" />
+              <Col title="Quartas" nos={L_QF} dir="r" />
+              <Col title="Semi" nos={L_SF} dir="r" />
+              <div className="flex shrink-0 flex-col">
+                <h4 className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wide text-yellow-700">Final 🏆</h4>
+                <div className="flex flex-1 flex-col justify-around"><KOCard no={104} dir="none" /></div>
+              </div>
+              <Col title="Semi" nos={R_SF} dir="l" />
+              <Col title="Quartas" nos={R_QF} dir="l" />
+              <Col title="Oitavas" nos={R_R16} dir="l" />
+              <Col title="16-avos" nos={R_R32} dir="l" />
             </div>
           </div>
           <div className="mt-4 max-w-xs">
