@@ -222,16 +222,35 @@ export default function SimuladorPage() {
             {thirdsInfo.provisional && <span className="pill bg-amber-500/20 text-[11px] font-semibold text-amber-700">parcial · {completeCount}/12 grupos</span>}
           </div>
           <p className="mt-1 text-sm text-[var(--muted)]">Os <b>8 melhores</b> avançam (pontos → saldo → gols). Sem confronto direto, pois são de grupos diferentes.{thirdsInfo.provisional ? " Muda conforme os jogos que faltam." : ""}</p>
-          <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
-            {thirdsInfo.ranked.map((t, i) => (
-              <div key={t.group} className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${i < 8 ? "bg-emerald-500/10" : "bg-[var(--hover)] opacity-70"}`}>
-                <span className="w-5 text-xs text-[var(--faint)]">{i + 1}º</span>
-                <MiniFlag team={t.row.team} /><span className="flex-1 truncate">{teamAbbr(t.row.team)} <span className="text-[var(--faint)]">· Grupo {t.group}{tables[t.group].complete ? "" : " (parcial)"}</span></span>
-                <span className="tabular-nums text-[var(--muted)]">{t.row.Pts} pts · {t.row.GD > 0 ? `+${t.row.GD}` : t.row.GD}</span>
-                <span className={i < 8 ? "text-emerald-600" : "text-[var(--faint)]"}>{i < 8 ? "✓" : "✗"}</span>
-              </div>
-            ))}
+          <div className="mt-3 overflow-hidden rounded-xl border border-[var(--border)]">
+            <table className="w-full text-sm">
+              <thead className="bg-[var(--hover)] text-left text-[var(--faint)]">
+                <tr>
+                  <th className="px-2 py-2 font-medium">#</th>
+                  <th className="px-1 py-2 font-medium">Seleção</th>
+                  <th className="px-2 py-2 text-center font-medium">Gr.</th>
+                  <th className="w-8 px-1 py-2 text-center font-medium">P</th>
+                  <th className="w-8 px-1 py-2 text-center font-medium">V</th>
+                  <th className="w-10 px-1 py-2 text-center font-medium">SG</th>
+                  <th className="w-9 px-1 py-2 text-center font-medium">Pts</th>
+                </tr>
+              </thead>
+              <tbody>
+                {thirdsInfo.ranked.map((t, i) => (
+                  <tr key={t.group} className={`border-t border-[var(--border)] ${i < 8 ? "bg-emerald-500/10" : "text-[var(--muted)] opacity-70"} ${i === 7 ? "border-b-2 border-dashed border-emerald-500/50" : ""}`}>
+                    <td className="px-2 py-1.5 tabular-nums">{i + 1}</td>
+                    <td className="px-1 py-1.5"><span className="flex items-center gap-1.5"><MiniFlag team={t.row.team} /><span className="truncate font-medium">{teamAbbr(t.row.team)}</span></span></td>
+                    <td className="px-2 py-1.5 text-center">{t.group}</td>
+                    <td className="px-1 py-1.5 text-center tabular-nums">{t.row.P}</td>
+                    <td className="px-1 py-1.5 text-center tabular-nums">{t.row.W}</td>
+                    <td className="px-1 py-1.5 text-center tabular-nums">{t.row.GD > 0 ? `+${t.row.GD}` : t.row.GD}</td>
+                    <td className="px-1 py-1.5 text-center font-semibold tabular-nums">{t.row.Pts}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+          <p className="mt-2 text-xs text-[var(--faint)]">Linha tracejada = corte dos 8 que se classificam (verde). Abaixo dela, fora.</p>
         </section>
       )}
 
