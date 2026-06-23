@@ -167,7 +167,21 @@ export default function ApostasPage() {
     if (res.ok) { await reloadSaved(); setMsg(`✓ ${data.saved} salvo(s)`); }
     else setMsg(data.error || "Erro ao salvar.");
   }
-  const setGuess = (id, side, v) => setGuesses((g) => ({ ...g, [id]: { ...g[id], [side]: v === "" ? "" : Math.max(0, Number(v)) } }));
+  const saveTimer = useRef(null);
+  async function autoSave() {
+    const g = guessesRef.current;
+    const bets = Object.entries(g)
+      .filter(([, v]) => v && v.home !== "" && v.away !== "" && v.home != null && v.away != null)
+      .map(([matchId, v]) => ({ matchId, homeGuess: v.home, awayGuess: v.away }));
+    if (!bets.length) return;
+    setSaving(true);
+    const res = await fetch("/api/bets", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bets }) });
+    setSaving(false);
+    if (res.ok) { const sv = {}; for (const b of bets) sv[b.matchId] = { home: b.homeGuess, away: b.awayGuess }; setSaved((s) => ({ ...s, ...sv })); setMsg(""); }
+    else { const d = await res.json().catch(() => ({})); setMsg(d.error || "Erro ao salvar."); }
+  }
+  const scheduleSave = () => { clearTimeout(saveTimer.current); saveTimer.current = setTimeout(autoSave, 1000); };
+  const setGuess = (id, side, v) => { setGuesses((g) => ({ ...g, [id]: { ...g[id], [side]: v === "" ? "" : Math.max(0, Number(v)) } })); scheduleSave(); };
 
   const groups = useMemo(() => {
     const g = {};
@@ -207,7 +221,7 @@ export default function ApostasPage() {
       {openMatch && <MatchBets match={openMatch} onClose={() => setOpenMatch(null)} />}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Apostas de Placar</h1>
-        <p className="mt-1 text-[var(--muted)]">Calendário completo por grupo e rodada. <b className="text-[var(--text)]">Clique em "Salvar" em cada palpite</b> (ou em "Salvar todos"). Cada palpite trava 1 min antes do apito. <span className="text-[var(--faint)]">Valem {pctBets}% da pontuação final.</span></p>
+        <p className="mt-1 text-[var(--muted)]">Calendário completo por grupo e rodada. <b className="text-[var(--text)]">Salva automaticamente</b> ao digitar; se quiser garantir, use os botões "Salvar" / "Salvar todos". Cada palpite trava 1 min antes do apito. <span className="text-[var(--faint)]">Valem {pctBets}% da pontuação final.</span></p>
       </div>
 
       <div className="card sticky top-16 z-10 flex flex-wrap items-center gap-3 p-4">
