@@ -1,6 +1,7 @@
 "use client";
 
 import { flagUrl } from "@/lib/flags";
+import { photoSrc } from "@/lib/photo";
 import { FORMATIONS, POSITION_LABELS } from "@/lib/defaults";
 
 const NAME_SUFFIX = new Set(["jr","jr.","junior","júnior","neto","filho","ii","iii"]);
@@ -95,7 +96,7 @@ function Slot({ slot, camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPo
     <div className={`flex w-14 flex-col items-center gap-1 sm:w-16 ${onPlayer ? "cursor-pointer" : ""}`} onClick={onPlayer ? () => onPlayer(player) : undefined} title={onPlayer ? "Ver pontuação" : undefined}>
       <span className="relative">
         <span className={`flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-2 bg-[var(--surface)] shadow ${isMine ? "border-emerald-400 ring-2 ring-emerald-400" : "border-white"}`}>
-          {player.photoUrl ? <img src={player.photoUrl} alt={player.name} className="h-full w-full object-cover object-top" /> : <svg viewBox="0 0 24 24" className="h-7 w-7 text-[var(--faint)]" fill="currentColor"><circle cx="12" cy="9" r="4" /><path d="M4 20.5c0-4.1 3.6-6.5 8-6.5s8 2.4 8 6.5V21H4z" /></svg>}
+          {player.photoUrl ? <img src={photoSrc(player.photoUrl)} alt={player.name} loading="lazy" className="h-full w-full object-cover object-top" /> : <svg viewBox="0 0 24 24" className="h-7 w-7 text-[var(--faint)]" fill="currentColor"><circle cx="12" cy="9" r="4" /><path d="M4 20.5c0-4.1 3.6-6.5 8-6.5s8 2.4 8 6.5V21H4z" /></svg>}
         </span>
         {flag && <span className="absolute -bottom-1 -left-1 h-5 w-5 overflow-hidden rounded-full ring-2 ring-[var(--surface)]"><img src={flag} alt={player.team} className="h-full w-full object-cover" /></span>}
 

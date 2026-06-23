@@ -1,4 +1,5 @@
 import { flagUrl } from "@/lib/flags";
+import { photoSrc } from "@/lib/photo";
 
 const SIZES = {
   sm: { box: "h-7 w-7", f: "h-3 w-3" },
@@ -14,7 +15,7 @@ export default function PlayerAvatar({ player, size = "md", className = "" }) {
     <span className={`relative inline-block shrink-0 ${s.box} ${className}`}>
       <span className="block h-full w-full overflow-hidden rounded-full bg-[var(--hover)]">
         {player?.photoUrl ? (
-          <img src={player.photoUrl} alt={player?.name || ""} className="h-full w-full object-cover object-top" />
+          <img src={photoSrc(player.photoUrl)} alt={player?.name || ""} loading="lazy" className="h-full w-full object-cover object-top" />
         ) : (
           <svg viewBox="0 0 24 24" className="h-full w-full text-[var(--faint)]" fill="currentColor"><circle cx="12" cy="9" r="4" /><path d="M4 20.5c0-4.1 3.6-6.5 8-6.5s8 2.4 8 6.5V21H4z" /></svg>
         )}
