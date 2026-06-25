@@ -27,7 +27,8 @@ function fillRow(types, pools) {
   });
 }
 
-export default function Pitch({ formation, starters = [], reserves = [], camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPoints, pointsOf, onPlayer, mineIds = [] }) {
+export default function Pitch({ formation, starters = [], reserves = [], camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPoints, pointsOf, onPlayer, mineIds = [], subbedInIds = [], subbedOut = [] }) {
+  const subInSet = new Set(subbedInIds);
   const shape = FORMATIONS[formation] || FORMATIONS["4-3-3"];
 
   const pools = { GOL: [], ZAG: [], LAT: [], MEI: [], ATA: [] };
@@ -58,7 +59,7 @@ export default function Pitch({ formation, starters = [], reserves = [], camisa1
           {rows.map((row, i) => (
             <div key={i} className="flex items-center justify-evenly px-2">
               {row.map((slot) => (
-                <Slot key={slot.key} slot={slot} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={onToggleCaptain} onRemove={onRemove} showPoints={showPoints} pointsOf={pointsOf} onPlayer={onPlayer} mineIds={mineIds} />
+                <Slot key={slot.key} slot={slot} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={onToggleCaptain} onRemove={onRemove} showPoints={showPoints} pointsOf={pointsOf} onPlayer={onPlayer} mineIds={mineIds} subbed={subInSet.has(slot.player?.id)} />
               ))}
             </div>
           ))}
@@ -69,15 +70,26 @@ export default function Pitch({ formation, starters = [], reserves = [], camisa1
         <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--faint)]">Reservas</div>
         <div className="flex items-start justify-between gap-1">
           {benchSlots.map((slot) => (
-            <Slot key={slot.key} slot={slot} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={onToggleCaptain} onRemove={onRemove} showPoints={showPoints} pointsOf={pointsOf} onPlayer={onPlayer} mineIds={mineIds} dark />
+            <Slot key={slot.key} slot={slot} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={onToggleCaptain} onRemove={onRemove} showPoints={showPoints} pointsOf={pointsOf} onPlayer={onPlayer} mineIds={mineIds} subbed={subInSet.has(slot.player?.id)} dark />
           ))}
         </div>
       </div>
+
+      {subbedOut.length > 0 && (
+        <div className="card border-l-4 border-l-amber-500 p-2">
+          <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wide text-amber-600">🔁 Substituídos · só pontuaram nos grupos</div>
+          <div className="flex items-start gap-1 overflow-x-auto">
+            {subbedOut.map((pl) => (
+              <Slot key={pl.id} slot={{ pos: pl.position, player: pl }} camisa10Id={camisa10Id} capMult={capMult} showPoints={showPoints} pointsOf={pointsOf} onPlayer={onPlayer} mineIds={mineIds} subbed dark />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function Slot({ slot, camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPoints, pointsOf, onPlayer, mineIds = [], dark }) {
+function Slot({ slot, camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPoints, pointsOf, onPlayer, mineIds = [], dark, subbed }) {
   const { pos, player } = slot;
   if (!player) {
     return (
@@ -99,6 +111,9 @@ function Slot({ slot, camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPo
           {player.photoUrl ? <img src={photoSrc(player.photoUrl)} alt={player.name} loading="lazy" className="h-full w-full object-cover object-top" /> : <svg viewBox="0 0 24 24" className="h-7 w-7 text-[var(--faint)]" fill="currentColor"><circle cx="12" cy="9" r="4" /><path d="M4 20.5c0-4.1 3.6-6.5 8-6.5s8 2.4 8 6.5V21H4z" /></svg>}
         </span>
         {flag && <span className="absolute -bottom-1 -left-1 h-5 w-5 overflow-hidden rounded-full ring-2 ring-[var(--surface)]"><img src={flag} alt={player.team} className="h-full w-full object-cover" /></span>}
+
+        {/* Selo de substituído (mata-mata) */}
+        {subbed && !onRemove && <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] leading-none shadow ring-1 ring-[var(--surface)]" title="Substituído (vale só no mata-mata)">🔁</span>}
 
         {/* Botão camisa 10 (ou selo estático no modo leitura) */}
         {onToggleCaptain ? (

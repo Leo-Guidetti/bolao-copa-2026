@@ -7,7 +7,7 @@ async function snapshotIdsFor(participantId) {
   const s = await prisma.setting.findUnique({ where: { key: "groupSquadSnapshot" } });
   let snap = {};
   try { snap = JSON.parse(s?.value || "{}"); } catch {}
-  return (snap[participantId]?.players || []).map((x) => x.playerId);
+  return snap[participantId] ? snap[participantId].players.map((x) => x.playerId) : null;
 }
 
 export async function GET() {
@@ -16,8 +16,8 @@ export async function GET() {
   const squad = await prisma.squad.findUnique({ where: { participantId: p.id }, include: { players: true } });
   const ko = await getKoWindow();
   if (!squad) return Response.json(null);
-  // Na janela de troca do mata-mata mandamos também o time congelado (base) pra contar as trocas.
-  const snapshotIds = ko.open ? await snapshotIdsFor(p.id) : null;
+  // Time congelado (base) pra marcar/contar as trocas (sempre que houver snapshot, mesmo fora da janela).
+  const snapshotIds = await snapshotIdsFor(p.id);
   return Response.json({ ...squad, koOpen: ko.open, koDeadline: ko.deadline, koMaxSubs: ko.maxSubs, snapshotIds });
 }
 

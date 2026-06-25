@@ -62,6 +62,8 @@ export default function SelecaoPage() {
   // Mercado fechado (e fora da janela de troca): mostra só quem já jogou, ordenado pela pontuação.
   useEffect(() => { if (readOnly) { setOnlyPlayed(true); setSortBy("pts"); } }, [readOnly]);
   const playerById = useMemo(() => Object.fromEntries(players.map((p) => [p.id, p])), [players]);
+  const subbedInIds = useMemo(() => (snapIds ? pickedIds.filter((id) => !snapSet.has(id)) : []), [snapIds, pickedIds, snapSet]);
+  const subbedOut = useMemo(() => (snapIds ? snapIds.filter((id) => !pickedIds.includes(id)).map((id) => playerById[id]).filter(Boolean) : []), [snapIds, pickedIds, playerById]);
   const shape = FORMATIONS[formation];
   const starterNeed = { GOL: 1, ZAG: shape.ZAG, LAT: shape.LAT, MEI: shape.MEI, ATA: shape.ATA };
   const capOf = (pos) => starterNeed[pos] + RESERVES[pos];
@@ -194,16 +196,17 @@ export default function SelecaoPage() {
 
   function ListRow({ p }) {
     const isCap = camisa10Id === p.id;
-    const flag = flagUrl(p.team);
+    const isSubIn = snapIds && !snapSet.has(p.id);
+    const shownPts = isSubIn ? 0 : ptsOf(p);
     return (
       <div onClick={() => setDetail(p)} className="flex cursor-pointer items-center gap-2 px-3 py-2">
         <span className="w-8 shrink-0 text-center text-[10px] font-bold text-[var(--muted)]">{p.position}</span>
         <PlayerAvatar player={p} size="sm" />
         <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-1 truncate text-sm font-medium">{p.name}{isCap && <span className="pill bg-accent/20 text-[9px] font-bold text-yellow-700">C10</span>}</span>
+          <span className="flex items-center gap-1 truncate text-sm font-medium">{p.name}{isCap && <span className="pill bg-accent/20 text-[9px] font-bold text-yellow-700">C10</span>}{isSubIn && <span className="pill bg-amber-500/20 text-[9px] font-bold text-amber-700" title="Troca — só pontua no mata-mata">🔁</span>}</span>
           <span className="block truncate text-[11px] text-[var(--faint)]">{teamFull(p.team)}</span>
         </span>
-        {(readOnly || ptsOf(p) !== 0) && <span className={`flex shrink-0 items-center gap-0.5 text-sm font-bold tabular-nums ${isCap ? "text-yellow-600" : ptsOf(p) < 0 ? "text-red-500" : ""}`}>{(ptsOf(p) * (isCap ? capMult : 1)).toFixed(1)}{isCap && <span className="rounded bg-accent/20 px-1 text-[9px] font-extrabold text-yellow-700">×{capMult}</span>}<span className="ml-0.5 text-[10px] font-normal text-[var(--faint)]">pts</span></span>}
+        {(readOnly || shownPts !== 0) && <span className={`flex shrink-0 items-center gap-0.5 text-sm font-bold tabular-nums ${isCap ? "text-yellow-600" : shownPts < 0 ? "text-red-500" : ""}`}>{(shownPts * (isCap ? capMult : 1)).toFixed(1)}{isCap && <span className="rounded bg-accent/20 px-1 text-[9px] font-extrabold text-yellow-700">×{capMult}</span>}<span className="ml-0.5 text-[10px] font-normal text-[var(--faint)]">pts</span></span>}
         <span className="pill shrink-0 bg-accent/15 font-semibold text-yellow-700">{p.price}¢</span>
         {!readOnly && (
           <span className="flex shrink-0 items-center gap-1">
@@ -310,7 +313,7 @@ export default function SelecaoPage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,340px)_1fr]">
         <div>
           {viewMode === "campo" ? (
-            <Pitch formation={formation} starters={starterPlayers} reserves={reservePlayers} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={readOnly ? undefined : toggleCaptain} onRemove={readOnly ? undefined : removePlayer} showPoints={readOnly} pointsOf={(pl) => ptsOf(pl) * (pl.id === camisa10Id ? capMult : 1)} onPlayer={setDetail} />
+            <Pitch formation={formation} starters={starterPlayers} reserves={reservePlayers} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={readOnly ? undefined : toggleCaptain} onRemove={readOnly ? undefined : removePlayer} showPoints={readOnly} pointsOf={(pl) => (snapIds && !snapSet.has(pl.id) ? 0 : ptsOf(pl) * (pl.id === camisa10Id ? capMult : 1))} subbedInIds={subbedInIds} subbedOut={subbedOut} onPlayer={setDetail} />
           ) : (
             <div className="space-y-3">
               <div className="card overflow-hidden p-0">

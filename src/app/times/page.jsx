@@ -49,7 +49,15 @@ export default function TimesPage() {
 
   const scout = rules?.scout || {};
   const capMult = rules?.camisa10Multiplier ?? 2;
-  const ptsTotal = (sq) => [...sq.starters, ...sq.reserves].reduce((s, pl) => s + playerScore(pl, scout) * (pl.id === sq.captainId ? capMult : 1), 0);
+  // Pontos por jogador cientes da troca: entrou = só mata-mata (koPts); saiu = só grupos (total-koPts); ficou = tudo.
+  const basePts = (sq, pl) => {
+    const total = playerScore(pl, scout);
+    if ((sq.subbedInIds || []).includes(pl.id)) return pl.koPts || 0;
+    if ((sq.subbedOut || []).some((x) => x.id === pl.id)) return total - (pl.koPts || 0);
+    return total;
+  };
+  const pp = (pl, sq) => basePts(sq, pl) * (pl.id === sq.captainId ? capMult : 1);
+  const ptsTotal = (sq) => [...sq.starters, ...sq.reserves, ...(sq.subbedOut || [])].reduce((s, pl) => s + pp(pl, sq), 0);
   const squads = useMemo(() => (data?.squads || []).slice().sort((a, b) => ptsTotal(b) - ptsTotal(a)), [data, rules]);
 
   if (me === null) return (
@@ -100,7 +108,6 @@ export default function TimesPage() {
             if (!mine) return <p className="text-sm text-[var(--muted)]">Você ainda não montou sua seleção.</p>;
             if (!opp) return null;
             const mt = ptsTotal(mine), ot = ptsTotal(opp);
-            const pp = (p, sq) => playerScore(p, scout) * (p.id === sq.captainId ? capMult : 1);
             const POS = ["GOL", "ZAG", "LAT", "MEI", "ATA"];
             const listOf = (sq, pos) => [...sq.starters, ...sq.reserves].filter((p) => p.position === pos).sort((x, y) => pp(y, sq) - pp(x, sq));
             const rows = [];
@@ -165,7 +172,7 @@ export default function TimesPage() {
             </div>
             <div className="max-w-[340px]">
               <Pitch formation={cur.formation} starters={cur.starters} reserves={cur.reserves} camisa10Id={cur.captainId} capMult={capMult}
-                showPoints pointsOf={(pl) => playerScore(pl, scout) * (pl.id === cur.captainId ? capMult : 1)} onPlayer={(pl) => setDetail({ player: pl, captainId: cur.captainId })} mineIds={myIds} />
+                showPoints pointsOf={(pl) => pp(pl, cur)} subbedInIds={cur.subbedInIds} subbedOut={cur.subbedOut} onPlayer={(pl) => setDetail({ player: pl, captainId: cur.captainId })} mineIds={myIds} />
             </div>
           </div>
         </div>
