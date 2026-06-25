@@ -129,7 +129,7 @@ export default function SelecaoPage() {
     if (koMode && snapIds && !snapSet.has(id) && subsCount >= maxSubs) return setMsg(`Você já fez ${maxSubs} trocas — o máximo para o mata-mata.`);
     setPickedIds((s) => [...s, id]); setMsg(""); scheduleSave();
   }
-  const toggleCaptain = (id) => { if (readOnly) return; setCamisa10Id((c) => (c === id ? "" : id)); scheduleSave(); };
+  const toggleCaptain = (id) => { if (readOnly || koMode) return; setCamisa10Id((c) => (c === id ? "" : id)); scheduleSave(); };
   function removePlayer(id) {
     if (readOnly) return;
     setPickedIds((s) => s.filter((x) => x !== id));
@@ -210,7 +210,7 @@ export default function SelecaoPage() {
         <span className="pill shrink-0 bg-accent/15 font-semibold text-yellow-700">{p.price}¢</span>
         {!readOnly && (
           <span className="flex shrink-0 items-center gap-1">
-            <button onClick={(e) => { e.stopPropagation(); toggleCaptain(p.id); }} title="Camisa 10" className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${isCap ? "bg-accent text-ink" : "bg-[var(--hover)] text-[var(--faint)]"}`}>10</button>
+            {!koMode && <button onClick={(e) => { e.stopPropagation(); toggleCaptain(p.id); }} title="Camisa 10" className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${isCap ? "bg-accent text-ink" : "bg-[var(--hover)] text-[var(--faint)]"}`}>10</button>}
             <button onClick={(e) => { e.stopPropagation(); removePlayer(p.id); }} title="Remover do time" aria-label="Remover" className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">×</button>
           </span>
         )}
@@ -262,7 +262,7 @@ export default function SelecaoPage() {
       {lock && (
         koMode ? (
           <div className="card border-l-4 border-l-accent p-3 text-sm">
-            🔁 <b>Janela de troca do mata-mata aberta.</b> Você pode fazer até <b>{maxSubs} trocas</b> <span className="text-[var(--muted)]">({subsCount}/{maxSubs} usadas)</span>{lock.ko?.deadline ? <> até <b className="text-[var(--text)]">{fmt(lock.ko.deadline)}</b></> : ""}. As trocas só valem no <b>mata-mata</b> — seu time da fase de grupos continua pontuando normalmente até o fim dos grupos.
+            🔁 <b>Janela de troca do mata-mata aberta.</b> Você pode fazer até <b>{maxSubs} trocas</b> <span className="text-[var(--muted)]">({subsCount}/{maxSubs} usadas)</span>{lock.ko?.deadline ? <> até <b className="text-[var(--text)]">{fmt(lock.ko.deadline)}</b></> : ""}. As trocas só valem no <b>mata-mata</b> — seu time da fase de grupos continua pontuando normalmente até o fim dos grupos. O <b>camisa 10 fica fixo</b> (não pode ser trocado).
           </div>
         ) : readOnly ? (
           <div className="card border-l-4 border-l-red-500 p-3 text-sm">
@@ -313,7 +313,7 @@ export default function SelecaoPage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,340px)_1fr]">
         <div>
           {viewMode === "campo" ? (
-            <Pitch formation={formation} starters={starterPlayers} reserves={reservePlayers} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={readOnly ? undefined : toggleCaptain} onRemove={readOnly ? undefined : removePlayer} showPoints={readOnly} pointsOf={(pl) => (snapIds && !snapSet.has(pl.id) ? 0 : ptsOf(pl) * (pl.id === camisa10Id ? capMult : 1))} subbedInIds={subbedInIds} subbedOut={subbedOut} onPlayer={setDetail} />
+            <Pitch formation={formation} starters={starterPlayers} reserves={reservePlayers} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={(readOnly || koMode) ? undefined : toggleCaptain} onRemove={readOnly ? undefined : removePlayer} showPoints={readOnly} pointsOf={(pl) => (snapIds && !snapSet.has(pl.id) ? 0 : ptsOf(pl) * (pl.id === camisa10Id ? capMult : 1))} subbedInIds={subbedInIds} subbedOut={subbedOut} onPlayer={setDetail} />
           ) : (
             <div className="space-y-3">
               <div className="card overflow-hidden p-0">
@@ -386,7 +386,7 @@ export default function SelecaoPage() {
                       <span className="pill bg-accent/15 font-semibold text-yellow-700">{p.price}¢</span>
                     </span>
                   </button>
-                  {isSel && (
+                  {isSel && !koMode && (
                     <button onClick={() => toggleCaptain(p.id)} title="Camisa 10"
                       className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${isCap ? "bg-accent text-ink" : "bg-[var(--hover)] text-[var(--faint)]"}`}>10</button>
                   )}

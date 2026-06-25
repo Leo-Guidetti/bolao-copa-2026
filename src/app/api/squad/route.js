@@ -3,11 +3,15 @@ import { currentParticipant } from "@/lib/session";
 import { getSquadLock, getKoWindow } from "@/lib/locks";
 import { getSetting } from "@/lib/config";
 
-async function snapshotIdsFor(participantId) {
+async function snapshotFor(participantId) {
   const s = await prisma.setting.findUnique({ where: { key: "groupSquadSnapshot" } });
   let snap = {};
   try { snap = JSON.parse(s?.value || "{}"); } catch {}
-  return snap[participantId] ? snap[participantId].players.map((x) => x.playerId) : null;
+  return snap[participantId] || null;
+}
+async function snapshotIdsFor(participantId) {
+  const snap = await snapshotFor(participantId);
+  return snap ? snap.players.map((x) => x.playerId) : null;
 }
 
 export async function GET() {
@@ -40,19 +44,22 @@ export async function POST(req) {
     if (cost > cap) return Response.json({ error: `Seleção acima do orçamento (${cost}¢ de ${cap}¢). Ajuste para salvar.` }, { status: 422 });
   }
 
-  // Janela do mata-mata: no máximo N trocas em relação ao time congelado (snapshot).
+  // Janela do mata-mata: no máximo N trocas em relação ao time congelado, e o CAMISA 10 NÃO pode mudar.
+  let effectiveCaptain = captainId || null;
   if (koMode) {
-    const base = new Set(await snapshotIdsFor(p.id));
-    if (base.size) {
+    const snap = await snapshotFor(p.id);
+    if (snap) {
+      const base = new Set(snap.players.map((x) => x.playerId));
       const subs = ids.filter((id) => !base.has(id)).length;
       if (subs > (ko.maxSubs ?? 4)) return Response.json({ error: `Máximo de ${ko.maxSubs ?? 4} trocas para o mata-mata (você fez ${subs}).` }, { status: 422 });
+      effectiveCaptain = snap.captainId || null; // camisa 10 travado na janela do mata-mata
     }
   }
 
   const squad = await prisma.squad.upsert({
     where: { participantId: p.id },
-    update: { formation, captainId: captainId || null },
-    create: { participantId: p.id, formation, captainId: captainId || null },
+    update: { formation, captainId: effectiveCaptain },
+    create: { participantId: p.id, formation, captainId: effectiveCaptain },
   });
   await prisma.squadPlayer.deleteMany({ where: { squadId: squad.id } });
   const rows = [
