@@ -27,20 +27,20 @@ function fmtDate(m) {
 
 function Flag({ team, align }) {
   const url = flagUrl(team);
-  const tbd = team === "A definir";
+  const placeholder = !url; // sem bandeira = vaga ainda não definida (mata-mata) ou "A definir"
   return (
     <span className={`flex items-center gap-1.5 ${align === "right" ? "flex-row-reverse text-right" : ""}`}>
       <span className="flex h-5 w-7 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-[var(--hover)]">
-        {url ? <img src={url} alt={team} className="h-full w-full object-cover" /> : <span className="text-[9px] text-[var(--faint)]">{tbd ? "?" : ""}</span>}
+        {url ? <img src={url} alt={team} className="h-full w-full object-cover" /> : <span className="text-[9px] text-[var(--faint)]">{team === "A definir" ? "?" : ""}</span>}
       </span>
-      <span className={`text-sm font-medium ${tbd ? "text-[var(--faint)]" : ""}`} title={team}>{teamAbbr(team)}</span>
+      <span className={`text-sm font-medium ${placeholder ? "text-[var(--faint)]" : ""}`} title={team}>{teamAbbr(team)}</span>
     </span>
   );
 }
 
 function Row({ m, g, savedG, lock, onChange, onSaveOne, savingId, scoring, onOpen, now = Date.now() }) {
   const done = m.finished && m.homeScore != null && m.awayScore != null;
-  const tbd = m.homeTeam === "A definir" || m.awayTeam === "A definir";
+  const tbd = !flagUrl(m.homeTeam) || !flagUrl(m.awayTeam); // só dá pra apostar quando os dois times são reais
   const lockAt = new Date(m.kickoff).getTime() - BET_LOCK_MS;
   const showCount = !done && !tbd && now < lockAt;
   const hasGuess = g && g.home !== "" && g.home != null && g.away !== "" && g.away != null;
@@ -123,7 +123,7 @@ export default function ApostasPage() {
       return s;
     }, 0);
   }, [matches, guesses, scoring]);
-  const tbd = (m) => m.homeTeam === "A definir" || m.awayTeam === "A definir";
+  const tbd = (m) => !flagUrl(m.homeTeam) || !flagUrl(m.awayTeam);
   const locked = (m) => m.finished || tbd(m) || new Date(m.kickoff).getTime() - BET_LOCK_MS <= now;
   const pendingCount = useMemo(() => {
     let n = 0;

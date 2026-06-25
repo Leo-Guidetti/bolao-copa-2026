@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { currentParticipant } from "@/lib/session";
+import { flagUrl } from "@/lib/flags";
 
 export async function GET() {
   const p = await currentParticipant();
@@ -20,6 +21,7 @@ export async function POST(req) {
   for (const b of bets || []) {
     const m = matchById[b.matchId];
     if (!m || m.finished || new Date(m.kickoff).getTime() - LOCK_MS <= now) continue;
+    if (!flagUrl(m.homeTeam) || !flagUrl(m.awayTeam)) continue; // não aposta em vaga ainda indefinida (mata-mata)
     if (b.homeGuess == null || b.awayGuess == null) continue;
     await prisma.bet.upsert({
       where: { participantId_matchId: { participantId: p.id, matchId: b.matchId } },
