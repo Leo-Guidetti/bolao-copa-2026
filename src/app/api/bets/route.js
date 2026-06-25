@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { currentParticipant } from "@/lib/session";
 import { flagUrl } from "@/lib/flags";
+import { getSetting } from "@/lib/config";
 
 export async function GET() {
   const p = await currentParticipant();
@@ -17,11 +18,13 @@ export async function POST(req) {
   const matchById = Object.fromEntries(matches.map((m) => [m.id, m]));
   const now = Date.now();
   const LOCK_MS = 1 * 60 * 1000; // palpite trava 1 min antes do apito
+  const koBetsOpen = !!(await getSetting("koBets"))?.open; // palpites do mata-mata liberados?
   let saved = 0;
   for (const b of bets || []) {
     const m = matchById[b.matchId];
     if (!m || m.finished || new Date(m.kickoff).getTime() - LOCK_MS <= now) continue;
     if (!flagUrl(m.homeTeam) || !flagUrl(m.awayTeam)) continue; // não aposta em vaga ainda indefinida (mata-mata)
+    if (m.stage !== "GROUP" && !koBetsOpen) continue; // mata-mata fechado por enquanto
     if (b.homeGuess == null || b.awayGuess == null) continue;
     await prisma.bet.upsert({
       where: { participantId_matchId: { participantId: p.id, matchId: b.matchId } },

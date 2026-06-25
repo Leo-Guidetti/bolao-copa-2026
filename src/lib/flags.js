@@ -48,7 +48,12 @@ export const TEAM_FULL = {
 };
 
 export function teamAbbr(team) {
-  if (team === "A definir") return "—";
-  return TEAM_ABBR[team] || team.slice(0, 3).toUpperCase();
+  if (TEAM_ABBR[team]) return TEAM_ABBR[team];
+  if (!team || team === "A definir") return "TBD";
+  let m;
+  if ((m = team.match(/^(\d)º Grupo ([A-L])$/))) return `${m[1]}º${m[2]}`; // 1º Grupo F -> 1ºF
+  if (/^3º /.test(team)) return "3º"; // 3º A/B/C/D/F -> 3º (rótulo completo no tooltip)
+  if (/^(Venc\.|Vencedor|Perdedor)/.test(team)) return "TBD"; // vaga do mata-mata ainda indefinida
+  return team.slice(0, 3).toUpperCase();
 }
 export function teamFull(team) { return TEAM_FULL[team] || team; }

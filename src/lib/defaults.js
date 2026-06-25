@@ -60,6 +60,7 @@ export const DEFAULT_SETTINGS = {
   entry: { amount: 50 },
   ranking: { weightBets: 0.6, weightSquad: 0.4 },
   prize: { distribution: [ { place: 1, pct: 60 }, { place: 2, pct: 25 }, { place: 3, pct: 15 } ], bestSquadPrize: 60, bestSquadTakeFromEach: 15 },
+  koBets: { open: false }, // palpites do mata-mata: fechados até definir a regra com o pessoal
 };
 
 export const STAGE_LABELS = {

@@ -38,9 +38,9 @@ function Flag({ team, align }) {
   );
 }
 
-function Row({ m, g, savedG, lock, onChange, onSaveOne, savingId, scoring, onOpen, now = Date.now() }) {
+function Row({ m, g, savedG, lock, onChange, onSaveOne, savingId, scoring, onOpen, now = Date.now(), koBetsOpen = false }) {
   const done = m.finished && m.homeScore != null && m.awayScore != null;
-  const tbd = !flagUrl(m.homeTeam) || !flagUrl(m.awayTeam); // só dá pra apostar quando os dois times são reais
+  const tbd = !flagUrl(m.homeTeam) || !flagUrl(m.awayTeam) || (m.stage !== "GROUP" && !koBetsOpen); // só aposta com os dois times reais e mata-mata liberado
   const lockAt = new Date(m.kickoff).getTime() - BET_LOCK_MS;
   const showCount = !done && !tbd && now < lockAt;
   const hasGuess = g && g.home !== "" && g.home != null && g.away !== "" && g.away != null;
@@ -90,6 +90,7 @@ export default function ApostasPage() {
   const [msg, setMsg] = useState("");
   const [weights, setWeights] = useState(null);
   const [scoring, setScoring] = useState(null);
+  const [koBetsOpen, setKoBetsOpen] = useState(false);
   const [viewMode, setViewMode] = useState("crono");
   const [timeTab, setTimeTab] = useState("prox"); // prox = a acontecer | fim = já aconteceram
   const [openMatch, setOpenMatch] = useState(null);
@@ -97,7 +98,7 @@ export default function ApostasPage() {
   useEffect(() => {
     fetch("/api/me").then((r) => r.json()).then(setMe);
     fetch("/api/matches").then((r) => r.json()).then(setMatches);
-    fetch("/api/settings").then((r) => r.json()).then((st) => { setWeights(st.ranking); setScoring(st.scoring); });
+    fetch("/api/settings").then((r) => r.json()).then((st) => { setWeights(st.ranking); setScoring(st.scoring); setKoBetsOpen(!!st.koBets?.open); });
   }, []);
 
   useEffect(() => {
@@ -123,7 +124,7 @@ export default function ApostasPage() {
       return s;
     }, 0);
   }, [matches, guesses, scoring]);
-  const tbd = (m) => !flagUrl(m.homeTeam) || !flagUrl(m.awayTeam);
+  const tbd = (m) => !flagUrl(m.homeTeam) || !flagUrl(m.awayTeam) || (m.stage !== "GROUP" && !koBetsOpen);
   const locked = (m) => m.finished || tbd(m) || new Date(m.kickoff).getTime() - BET_LOCK_MS <= now;
   const pendingCount = useMemo(() => {
     let n = 0;
@@ -253,7 +254,7 @@ export default function ApostasPage() {
               {[1, 2, 3].map((r) => (
                 <div key={r} className="mt-2">
                   <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--faint)]">Rodada {r}</div>
-                  <div className="divide-y divide-[var(--border)]">{(groups[gl][r] || []).map((m) => <Row key={m.id} m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} />)}</div>
+                  <div className="divide-y divide-[var(--border)]">{(groups[gl][r] || []).map((m) => <Row key={m.id} m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} koBetsOpen={koBetsOpen} />)}</div>
                 </div>
               ))}
             </div>
@@ -268,7 +269,7 @@ export default function ApostasPage() {
             <div key={s} className="card p-4">
               <h3 className="mb-2 font-semibold">{STAGE_LABELS[s]}</h3>
               <div className="divide-y divide-[var(--border)]">
-                {knockout[s].map((m, i) => (<div key={m.id}><div className="pt-2 text-[11px] text-[var(--faint)]">Jogo {i + 1}</div><Row m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} /></div>))}
+                {knockout[s].map((m, i) => (<div key={m.id}><div className="pt-2 text-[11px] text-[var(--faint)]">Jogo {i + 1}</div><Row m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} koBetsOpen={koBetsOpen} /></div>))}
               </div>
               <p className="mt-2 text-xs text-[var(--faint)]">Confrontos definidos após a fase de grupos.</p>
             </div>
@@ -302,7 +303,7 @@ export default function ApostasPage() {
                   {d.items.map((m) => (
                     <div key={m.id}>
                       <div className="pt-1 text-center text-[10px] font-medium text-[var(--muted)]">{tag(m)}</div>
-                      <Row m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} />
+                      <Row m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} koBetsOpen={koBetsOpen} />
                     </div>
                   ))}
                 </div>
