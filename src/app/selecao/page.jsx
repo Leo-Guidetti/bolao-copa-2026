@@ -19,6 +19,7 @@ export default function SelecaoPage() {
   const [prize, setPrize] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
   const [lock, setLock] = useState(null);
+  const [snapIds, setSnapIds] = useState(null);
   const [formation, setFormation] = useState(DEFAULT_FORMATION);
   const [pickedIds, setPickedIds] = useState([]);
   const [camisa10Id, setCamisa10Id] = useState("");
@@ -48,13 +49,18 @@ export default function SelecaoPage() {
         setFormation(sq.formation && FORMATIONS[sq.formation] ? sq.formation : DEFAULT_FORMATION);
         setCamisa10Id(sq.captainId || "");
         setPickedIds(sq.players.map((p) => p.playerId));
+        setSnapIds(sq.snapshotIds || null);
       }
     });
   }, [me]);
 
-  const readOnly = !!lock?.locked;
-  // Mercado fechado: por padrão mostra só quem já jogou, ordenado pela pontuação parcial.
-  useEffect(() => { if (lock?.locked) { setOnlyPlayed(true); setSortBy("pts"); } }, [lock?.locked]);
+  const koMode = !!(lock?.locked && lock?.ko?.open); // janela de troca do mata-mata
+  const readOnly = !!lock?.locked && !koMode;
+  const maxSubs = lock?.ko?.maxSubs ?? 4;
+  const snapSet = useMemo(() => new Set(snapIds || []), [snapIds]);
+  const subsCount = useMemo(() => (snapIds ? pickedIds.filter((id) => !snapSet.has(id)).length : 0), [pickedIds, snapSet, snapIds]);
+  // Mercado fechado (e fora da janela de troca): mostra só quem já jogou, ordenado pela pontuação.
+  useEffect(() => { if (readOnly) { setOnlyPlayed(true); setSortBy("pts"); } }, [readOnly]);
   const playerById = useMemo(() => Object.fromEntries(players.map((p) => [p.id, p])), [players]);
   const shape = FORMATIONS[formation];
   const starterNeed = { GOL: 1, ZAG: shape.ZAG, LAT: shape.LAT, MEI: shape.MEI, ATA: shape.ATA };
@@ -118,6 +124,7 @@ export default function SelecaoPage() {
     if (totalCost + (player.price || 0) > budgetCap) return setMsg("Isso estoura o orçamento.");
     const posCount = allPicked.filter((p) => p.position === pos).length;
     if (posCount >= capOf(pos)) return setMsg(`Sem vaga para mais um ${POSITION_LABELS[pos].toLowerCase()} (titular ou reserva).`);
+    if (koMode && snapIds && !snapSet.has(id) && subsCount >= maxSubs) return setMsg(`Você já fez ${maxSubs} trocas — o máximo para o mata-mata.`);
     setPickedIds((s) => [...s, id]); setMsg(""); scheduleSave();
   }
   const toggleCaptain = (id) => { if (readOnly) return; setCamisa10Id((c) => (c === id ? "" : id)); scheduleSave(); };
@@ -222,20 +229,6 @@ export default function SelecaoPage() {
 
       <LeigoMaster context="selecao" />
 
-      <div className="card flex items-center justify-between gap-3 border-l-4 border-l-accent p-4">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🌟</span>
-          <div>
-            <div className="text-sm font-semibold">Prêmio da melhor seleção: {((prize?.bestSquadPrize ?? 60)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</div>
-            <div className="text-xs text-[var(--muted)]">Quem terminar com mais pontos de fantasy leva esse prêmio à parte.</div>
-          </div>
-        </div>
-        <div className="shrink-0 text-right">
-          <div className="text-lg font-bold tabular-nums">{teamPoints.toFixed(1)}</div>
-          <div className="text-[10px] text-[var(--faint)]">sua seleção</div>
-        </div>
-      </div>
-
       {showInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowInfo(false)}>
           <div className="card max-h-[85vh] w-full max-w-lg overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
@@ -264,7 +257,11 @@ export default function SelecaoPage() {
       )}
 
       {lock && (
-        readOnly ? (
+        koMode ? (
+          <div className="card border-l-4 border-l-accent p-3 text-sm">
+            🔁 <b>Janela de troca do mata-mata aberta.</b> Você pode fazer até <b>{maxSubs} trocas</b> <span className="text-[var(--muted)]">({subsCount}/{maxSubs} usadas)</span>{lock.ko?.deadline ? <> até <b className="text-[var(--text)]">{fmt(lock.ko.deadline)}</b></> : ""}. As trocas só valem no <b>mata-mata</b> — seu time da fase de grupos continua pontuando normalmente até o fim dos grupos.
+          </div>
+        ) : readOnly ? (
           <div className="card border-l-4 border-l-red-500 p-3 text-sm">
             🔒 <b>Seleção travada.</b> O prazo encerrou em {fmt(lock.deadline)} (30 min antes da estreia). Não é mais possível editar.
           </div>
@@ -302,6 +299,7 @@ export default function SelecaoPage() {
           <button type="button" onClick={() => setViewMode("lista")} className={`rounded-full px-3 py-1 transition ${viewMode === "lista" ? "bg-[var(--surface)] font-semibold shadow" : "text-[var(--muted)]"}`}>Lista</button>
         </div>
         <div className="ml-auto flex items-center gap-3 text-sm">
+          {koMode && <span className={`pill ${subsCount >= maxSubs ? "bg-amber-500/20 text-amber-700" : "bg-accent/20 text-yellow-700"}`}>🔁 {subsCount}/{maxSubs} trocas</span>}
           <span className={`pill ${over ? "bg-red-100 text-red-700" : "bg-brand-light text-brand-dark"}`}>{totalCost}¢ / {budgetCap}¢</span>
           <span className="pill bg-[var(--hover)] text-[var(--muted)]">{allPicked.length}/{SQUAD_SIZE}</span>
           <button className="btn-primary" onClick={save} disabled={saving || readOnly}>{saving ? "Salvando…" : readOnly ? "Travada" : "Salvar agora"}</button>
