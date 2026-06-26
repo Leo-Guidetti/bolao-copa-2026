@@ -207,8 +207,17 @@ export default function SelecaoPage() {
     return (
       <div className="space-y-6">
         <div className="flex flex-col items-center gap-2 py-2 text-center">
-          <div className="text-3xl animate-bounce">⚽</div>
-          <p className="text-sm font-medium text-[var(--muted)]">Preparando o gramado…</p>
+          <div className="sk-track">
+            <img src="/trionda.webp" alt="Carregando" className="sk-ball rounded-full object-cover" />
+          </div>
+          <p className="animate-pulse text-sm font-medium text-[var(--muted)]">Preparando o gramado…</p>
+          <style>{`
+            .sk-track { position: relative; height: 56px; width: 150px; display: flex; align-items: center; justify-content: center; }
+            .sk-track::after { content: ""; position: absolute; bottom: 2px; left: 50%; width: 90px; height: 6px; transform: translateX(-50%); border-radius: 9999px; background: rgba(0,0,0,0.18); filter: blur(3px); animation: sk-shadow 1s ease-in-out infinite; }
+            .sk-ball { height: 46px; width: 46px; display: block; will-change: transform; animation: sk-roll 1s ease-in-out infinite; }
+            @keyframes sk-roll { 0% { transform: translateX(-42px) rotate(0deg); } 50% { transform: translateX(42px) rotate(360deg); } 100% { transform: translateX(-42px) rotate(720deg); } }
+            @keyframes sk-shadow { 0%, 100% { width: 70px; opacity: 0.5; } 50% { width: 100px; opacity: 0.3; } }
+          `}</style>
         </div>
 
         <div className="mx-auto flex w-full max-w-xs gap-1 rounded-full bg-[var(--hover)] p-1">
