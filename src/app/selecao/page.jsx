@@ -78,6 +78,12 @@ export default function SelecaoPage() {
       reserves: snapFull.players.filter((x) => !x.isStarter).map((x) => playerById[x.playerId]).filter(Boolean),
     };
   }, [snapFull, playerById]);
+  // Visão atual: "grupos" mostra o time congelado (read-only); "mata" mostra o time editável.
+  const showGroupTeam = phaseView === "grupos" && !!groupSquad;
+  const dForm = showGroupTeam ? groupSquad.formation : formation;
+  const dStart = showGroupTeam ? groupSquad.starters : starterPlayers;
+  const dRes = showGroupTeam ? groupSquad.reserves : reservePlayers;
+  const dCap = showGroupTeam ? groupSquad.captainId : camisa10Id;
   const shape = FORMATIONS[formation];
   const starterNeed = { GOL: 1, ZAG: shape.ZAG, LAT: shape.LAT, MEI: shape.MEI, ATA: shape.ATA };
   const capOf = (pos) => starterNeed[pos] + RESERVES[pos];
@@ -315,46 +321,9 @@ export default function SelecaoPage() {
         </div>
       )}
 
-      {phaseView === "grupos" && groupSquad ? (
-        <div className="space-y-3">
-          <div className="card border-l-4 border-l-brand p-3 text-sm text-[var(--muted)]">⚽ <b className="text-[var(--text)]">Time da fase de grupos</b> (congelado) — pontua os jogos dos grupos. Pra fazer as trocas do mata-mata, vá na aba <b>Mata-mata</b>.</div>
-          <div className="flex justify-center">
-            <div className="flex rounded-full bg-[var(--hover)] p-0.5 text-xs">
-              <button type="button" onClick={() => setViewMode("campo")} className={`rounded-full px-3 py-1 transition ${viewMode === "campo" ? "bg-[var(--surface)] font-semibold shadow" : "text-[var(--muted)]"}`}>Campo</button>
-              <button type="button" onClick={() => setViewMode("lista")} className={`rounded-full px-3 py-1 transition ${viewMode === "lista" ? "bg-[var(--surface)] font-semibold shadow" : "text-[var(--muted)]"}`}>Lista</button>
-            </div>
-          </div>
-          {viewMode === "campo" ? (
-            <div className="mx-auto max-w-[340px]">
-              <Pitch formation={groupSquad.formation} starters={groupSquad.starters} reserves={groupSquad.reserves} camisa10Id={groupSquad.captainId} capMult={capMult} showPoints pointsOf={(pl) => ptsOf(pl) * (pl.id === groupSquad.captainId ? capMult : 1)} onPlayer={setDetail} />
-            </div>
-          ) : (
-            <div className="card mx-auto max-w-md overflow-hidden p-0">
-              <div className="divide-y divide-[var(--border)]">
-                {[...groupSquad.starters, ...groupSquad.reserves]
-                  .map((pl) => ({ pl, pts: ptsOf(pl) * (pl.id === groupSquad.captainId ? capMult : 1), cap: pl.id === groupSquad.captainId }))
-                  .sort((a, b) => b.pts - a.pts)
-                  .map(({ pl, pts, cap }, i) => (
-                    <div key={pl.id} onClick={() => setDetail(pl)} className="flex cursor-pointer items-center gap-2 px-3 py-2">
-                      <span className="w-5 shrink-0 text-center text-[11px] font-bold text-[var(--faint)]">{i + 1}</span>
-                      <PlayerAvatar player={pl} size="sm" />
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-1 truncate text-sm font-medium">{pl.name}{cap && <span className="pill bg-accent/20 text-[9px] font-bold text-yellow-700">C10</span>}</span>
-                        <span className="block truncate text-[11px] text-[var(--faint)]">{pl.position} · {teamFull(pl.team)}</span>
-                      </span>
-                      <span className={`flex shrink-0 items-center gap-0.5 text-sm font-bold tabular-nums ${cap ? "text-yellow-600" : pts < 0 ? "text-red-500" : ""}`}>{pts.toFixed(1)}{cap && <span className="rounded bg-accent/20 px-1 text-[9px] font-extrabold text-yellow-700">×{capMult}</span>}<span className="ml-0.5 text-[10px] font-normal text-[var(--faint)]">pts</span></span>
-                      <span className="pill shrink-0 bg-accent/15 font-semibold text-yellow-700">{pl.price}¢</span>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-      <>
       <div className="card flex flex-wrap items-center gap-3 p-4">
-        <span className="text-sm text-[var(--muted)]">Time de <b className="text-[var(--text)]">{me?.name || "..."}</b></span>
-        <select className="input max-w-[8rem]" value={formation} disabled={readOnly} onChange={(e) => changeFormation(e.target.value)}>
+        <span className="text-sm text-[var(--muted)]">Time de <b className="text-[var(--text)]">{me?.name || "..."}</b>{showGroupTeam && <span className="ml-1 text-xs text-[var(--faint)]">· fase de grupos (congelado)</span>}</span>
+        <select className="input max-w-[8rem]" value={formation} disabled={readOnly || showGroupTeam} onChange={(e) => changeFormation(e.target.value)}>
           {Object.keys(FORMATIONS).map((f) => <option key={f} value={f}>{f}</option>)}
         </select>
         <div className="flex rounded-full bg-[var(--hover)] p-0.5 text-xs">
@@ -365,14 +334,16 @@ export default function SelecaoPage() {
           {koMode && <span className={`pill ${subsCount >= maxSubs ? "bg-amber-500/20 text-amber-700" : "bg-accent/20 text-yellow-700"}`}>🔁 {subsCount}/{maxSubs} trocas</span>}
           <span className={`pill ${over ? "bg-red-100 text-red-700" : "bg-brand-light text-brand-dark"}`}>{totalCost}¢ / {budgetCap}¢</span>
           <span className="pill bg-[var(--hover)] text-[var(--muted)]">{allPicked.length}/{SQUAD_SIZE}</span>
-          <button className="btn-primary" onClick={save} disabled={saving || readOnly}>{saving ? "Salvando…" : readOnly ? "Travada" : "Salvar agora"}</button>
+          <button className="btn-primary" onClick={save} disabled={saving || readOnly || showGroupTeam}>{saving ? "Salvando…" : showGroupTeam ? "Só leitura" : readOnly ? "Travada" : "Salvar agora"}</button>
         </div>
       </div>
       {msg && <p className="text-sm text-brand-dark">{msg}</p>}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,340px)_1fr]">
         <div>
-          {viewMode === "campo" ? (
+          {showGroupTeam ? (
+            <Pitch formation={dForm} starters={dStart} reserves={dRes} camisa10Id={dCap} capMult={capMult} showPoints pointsOf={(pl) => ptsOf(pl) * (pl.id === dCap ? capMult : 1)} onPlayer={setDetail} />
+          ) : viewMode === "campo" ? (
             <Pitch formation={formation} starters={starterPlayers} reserves={reservePlayers} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={(readOnly || koMode) ? undefined : toggleCaptain} onRemove={readOnly ? undefined : removePlayer} showPoints={readOnly} pointsOf={(pl) => (snapIds && !snapSet.has(pl.id) ? 0 : ptsOf(pl) * (pl.id === camisa10Id ? capMult : 1))} subbedInIds={subbedInIds} subbedOut={subbedOut} onPlayer={setDetail} />
           ) : (
             <div className="space-y-3">
@@ -433,7 +404,7 @@ export default function SelecaoPage() {
               const isSel = inStart || inRes, isCap = camisa10Id === p.id, flag = flagUrl(p.team);
               return (
                 <div key={p.id} className={`card flex items-center gap-2 p-2 transition ${isSel ? "ring-2 ring-brand" : ""}`}>
-                  <button onClick={() => (readOnly ? setDetail(p) : toggle(p))} className="flex flex-1 items-center gap-2 text-left">
+                  <button onClick={() => ((readOnly || showGroupTeam) ? setDetail(p) : toggle(p))} className="flex flex-1 items-center gap-2 text-left">
                     <PlayerAvatar player={p} size="md" />
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-medium">{p.name}</span>
@@ -446,7 +417,7 @@ export default function SelecaoPage() {
                       <span className="pill bg-accent/15 font-semibold text-yellow-700">{p.price}¢</span>
                     </span>
                   </button>
-                  {isSel && !koMode && (
+                  {isSel && !koMode && !showGroupTeam && (
                     <button onClick={() => toggleCaptain(p.id)} title="Camisa 10"
                       className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${isCap ? "bg-accent text-ink" : "bg-[var(--hover)] text-[var(--faint)]"}`}>10</button>
                   )}
@@ -456,8 +427,6 @@ export default function SelecaoPage() {
           </div>
         </div>
       </div>
-      </>
-      )}
     </div>
   );
 }
