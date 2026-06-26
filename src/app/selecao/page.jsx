@@ -201,6 +201,65 @@ export default function SelecaoPage() {
     </div>
   );
 
+  // Enquanto os dados não chegam, mostra um esqueleto animado (evita a tela "mockada" truncada).
+  if (me === undefined || rules === null || lock === null || players.length === 0) {
+    const Bar = ({ className = "" }) => <div className={`animate-pulse rounded-md bg-[var(--hover)] ${className}`} />;
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col items-center gap-2 py-2 text-center">
+          <div className="text-3xl animate-bounce">⚽</div>
+          <p className="text-sm font-medium text-[var(--muted)]">Preparando o gramado…</p>
+        </div>
+
+        <div className="mx-auto flex w-full max-w-xs gap-1 rounded-full bg-[var(--hover)] p-1">
+          <Bar className="h-7 flex-1 rounded-full" />
+          <Bar className="h-7 flex-1 rounded-full bg-[var(--border)]" />
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* Campinho */}
+          <div className="space-y-2">
+            <div className="relative w-full overflow-hidden rounded-2xl border border-[var(--border)]" style={{ aspectRatio: "3 / 4", background: "linear-gradient(180deg,var(--hover),var(--surface))" }}>
+              <div className="pointer-events-none absolute inset-3 rounded-xl border-2 border-[var(--border)]" />
+              <div className="pointer-events-none absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full border-2 border-[var(--border)]" />
+              <div className="pointer-events-none absolute left-3 right-3 top-1/2 -translate-y-1/2 border-t border-[var(--border)]" />
+              <div className="relative flex h-full flex-col justify-around py-6">
+                {[3, 3, 3].map((n, i) => (
+                  <div key={i} className="flex justify-evenly px-2">
+                    {Array.from({ length: n }).map((_, j) => <div key={j} className="h-11 w-11 animate-pulse rounded-full bg-[var(--surface)]" />)}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="card flex items-start justify-between gap-1 p-2">
+              {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-10 w-10 animate-pulse rounded-full bg-[var(--hover)]" />)}
+            </div>
+          </div>
+
+          {/* Busca + lista */}
+          <div className="space-y-3">
+            <Bar className="h-10 w-full" />
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <Bar className="h-9" /><Bar className="h-9" /><Bar className="h-9" />
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="card flex items-center gap-2 p-2">
+                  <div className="h-9 w-9 animate-pulse rounded-full bg-[var(--hover)]" />
+                  <div className="flex-1 space-y-1.5">
+                    <Bar className="h-3 w-2/3" />
+                    <Bar className="h-2.5 w-1/2" />
+                  </div>
+                  <Bar className="h-5 w-10 rounded-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const SCOUT_INFO = [
     ["goal", "Gol", "Gol marcado pelo jogador."],
     ["assist", "Assistência", "Passe que resulta em gol."],
