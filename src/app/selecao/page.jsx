@@ -64,7 +64,7 @@ export default function SelecaoPage() {
   const snapSet = useMemo(() => new Set(snapIds || []), [snapIds]);
   const subsCount = useMemo(() => (snapIds ? pickedIds.filter((id) => !snapSet.has(id)).length : 0), [pickedIds, snapSet, snapIds]);
   // Mercado fechado (e fora da janela de troca): mostra só quem já jogou, ordenado pela pontuação.
-  useEffect(() => { if (readOnly) { setOnlyPlayed(true); setSortBy("pts"); } }, [readOnly]);
+  useEffect(() => { if (readOnly || phaseView === "grupos") { setOnlyPlayed(true); setSortBy("pts"); } }, [readOnly, phaseView]);
   const playerById = useMemo(() => Object.fromEntries(players.map((p) => [p.id, p])), [players]);
   const subbedInIds = useMemo(() => (snapIds ? pickedIds.filter((id) => !snapSet.has(id)) : []), [snapIds, pickedIds, snapSet]);
   const subbedOut = useMemo(() => (snapIds ? snapIds.filter((id) => !pickedIds.includes(id)).map((id) => playerById[id]).filter(Boolean) : []), [snapIds, pickedIds, playerById]);
@@ -102,6 +102,8 @@ export default function SelecaoPage() {
   const dStart = showGroupTeam ? groupSquad.starters : starterPlayers;
   const dRes = showGroupTeam ? groupSquad.reserves : reservePlayers;
   const dCap = showGroupTeam ? groupSquad.captainId : camisa10Id;
+  const dStartIds = showGroupTeam ? groupSquad.starters.map((p) => p.id) : starterIds;
+  const dResIds = showGroupTeam ? groupSquad.reserves.map((p) => p.id) : reserveIds;
   const cntStart = (pos) => starterPlayers.filter((p) => p.position === pos).length;
   const cntRes = (pos) => reservePlayers.filter((p) => p.position === pos).length;
   const totalCost = allPicked.reduce((s, p) => s + (p.price || 0), 0);
@@ -382,13 +384,15 @@ export default function SelecaoPage() {
             <select className="input" value={posFilter} onChange={(e) => setPosFilter(e.target.value)}>
               <option value="">Todas posições</option>{POSITIONS.map((p) => <option key={p} value={p}>{POSITION_LABELS[p]}</option>)}
             </select>
-            <select className="input" value={priceFilter} onChange={(e) => setPriceFilter(e.target.value)}>
-              <option value="">Todos preços</option>{[1, 2, 3, 5, 8].map((v) => <option key={v} value={v}>{v}¢</option>)}
-            </select>
+            {!showGroupTeam && (
+              <select className="input" value={priceFilter} onChange={(e) => setPriceFilter(e.target.value)}>
+                <option value="">Todos preços</option>{[1, 2, 3, 5, 8].map((v) => <option key={v} value={v}>{v}¢</option>)}
+              </select>
+            )}
             <select className="input col-span-2 sm:col-span-3" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
               <option value="pts">Ordenar: pontuação</option>
-              <option value="price-desc">Ordenar: preço (maior)</option>
-              <option value="price-asc">Ordenar: preço (menor)</option>
+              {!showGroupTeam && <option value="price-desc">Ordenar: preço (maior)</option>}
+              {!showGroupTeam && <option value="price-asc">Ordenar: preço (menor)</option>}
               <option value="pos">Ordenar: posição</option>
               <option value="name">Ordenar: nome</option>
             </select>
@@ -400,8 +404,8 @@ export default function SelecaoPage() {
 
           <div className="grid gap-2 sm:grid-cols-2">
             {list.map((p) => {
-              const inStart = starterIds.includes(p.id), inRes = reserveIds.includes(p.id);
-              const isSel = inStart || inRes, isCap = camisa10Id === p.id, flag = flagUrl(p.team);
+              const inStart = dStartIds.includes(p.id), inRes = dResIds.includes(p.id);
+              const isSel = inStart || inRes, isCap = dCap === p.id, flag = flagUrl(p.team);
               return (
                 <div key={p.id} className={`card flex items-center gap-2 p-2 transition ${isSel ? "ring-2 ring-brand" : ""}`}>
                   <button onClick={() => ((readOnly || showGroupTeam) ? setDetail(p) : toggle(p))} className="flex flex-1 items-center gap-2 text-left">
@@ -414,7 +418,7 @@ export default function SelecaoPage() {
                       <span className={`flex items-center gap-0.5 text-sm font-bold tabular-nums ${isCap ? "text-yellow-600" : ptsOf(p) < 0 ? "text-red-500" : ""}`}>{(ptsOf(p) * (isCap ? capMult : 1)).toFixed(1)}{isCap && <span className="rounded bg-accent/20 px-1 text-[9px] font-extrabold text-yellow-700">×{capMult}</span>}<span className="text-[10px] font-normal text-[var(--faint)]"> pts</span></span>
                       {inStart && <span className="pill bg-brand-light text-brand-dark">T</span>}
                       {inRes && <span className="pill bg-[var(--hover)] text-[var(--muted)]">R</span>}
-                      <span className="pill bg-accent/15 font-semibold text-yellow-700">{p.price}¢</span>
+                      {!showGroupTeam && <span className="pill bg-accent/15 font-semibold text-yellow-700">{p.price}¢</span>}
                     </span>
                   </button>
                   {isSel && !koMode && !showGroupTeam && (
