@@ -78,12 +78,6 @@ export default function SelecaoPage() {
       reserves: snapFull.players.filter((x) => !x.isStarter).map((x) => playerById[x.playerId]).filter(Boolean),
     };
   }, [snapFull, playerById]);
-  // Visão atual: "grupos" mostra o time congelado (read-only); "mata" mostra o time editável.
-  const showGroupTeam = phaseView === "grupos" && !!groupSquad;
-  const dForm = showGroupTeam ? groupSquad.formation : formation;
-  const dStart = showGroupTeam ? groupSquad.starters : starterPlayers;
-  const dRes = showGroupTeam ? groupSquad.reserves : reservePlayers;
-  const dCap = showGroupTeam ? groupSquad.captainId : camisa10Id;
   const shape = FORMATIONS[formation];
   const starterNeed = { GOL: 1, ZAG: shape.ZAG, LAT: shape.LAT, MEI: shape.MEI, ATA: shape.ATA };
   const capOf = (pos) => starterNeed[pos] + RESERVES[pos];
@@ -102,6 +96,12 @@ export default function SelecaoPage() {
   }, [pickedIds, playerById, formation]);
 
   const allPicked = starterPlayers.concat(reservePlayers);
+  // Visão atual: "grupos" mostra o time congelado (read-only); "mata" mostra o time editável.
+  const showGroupTeam = phaseView === "grupos" && !!groupSquad;
+  const dForm = showGroupTeam ? groupSquad.formation : formation;
+  const dStart = showGroupTeam ? groupSquad.starters : starterPlayers;
+  const dRes = showGroupTeam ? groupSquad.reserves : reservePlayers;
+  const dCap = showGroupTeam ? groupSquad.captainId : camisa10Id;
   const cntStart = (pos) => starterPlayers.filter((p) => p.position === pos).length;
   const cntRes = (pos) => reservePlayers.filter((p) => p.position === pos).length;
   const totalCost = allPicked.reduce((s, p) => s + (p.price || 0), 0);
