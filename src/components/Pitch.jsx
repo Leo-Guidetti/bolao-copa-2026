@@ -112,8 +112,8 @@ function Slot({ slot, camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPo
         </span>
         {flag && <span className="absolute -bottom-1 -left-1 h-5 w-5 overflow-hidden rounded-full ring-2 ring-[var(--surface)]"><img src={flag} alt={player.team} className="h-full w-full object-cover" /></span>}
 
-        {/* Selo de substituído (mata-mata) */}
-        {subbed && !onRemove && <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] leading-none shadow ring-1 ring-[var(--surface)]" title="Substituído (vale só no mata-mata)">🔁</span>}
+        {/* Selo de substituído (mata-mata) — só o emoji de setas */}
+        {subbed && !onRemove && <span className="absolute -right-2 -top-2 text-sm leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]" title="Substituído (vale só no mata-mata)">🔄</span>}
 
         {/* Botão camisa 10 (ou selo estático no modo leitura) */}
         {onToggleCaptain ? (

@@ -15,6 +15,7 @@ export async function GET() {
   const ko = await getKoWindow();
   const squadRules = await getSetting("squadRules");
   const scout = squadRules?.scout || {};
+  const showGroup = !ko.started; // antes do mata-mata começar, mostra o time de grupos (o que pontua)
 
   const [parts, matches, allStats, snapRow, allPlayers] = await Promise.all([
     prisma.participant.findMany({ include: { squad: { include: { players: { include: { player: true } } } } }, orderBy: { name: "asc" } }),
@@ -28,7 +29,6 @@ export async function GET() {
   const stageBy = Object.fromEntries(matches.map((m) => [m.id, m.stage]));
   const byId = Object.fromEntries(allPlayers.map((p) => [p.id, p]));
 
-  // koPts por jogador = pontos só dos jogos de MATA-MATA (0 enquanto não houver mata-mata).
   const koAgg = {};
   for (const st of allStats) {
     if (stageBy[st.matchId] === "GROUP") continue;
@@ -36,37 +36,41 @@ export async function GET() {
     for (const f of STAT_FIELDS) b[f] = (b[f] || 0) + (st[f] || 0);
   }
   const withKo = (pl) => ({ ...pl, koPts: playerScore({ position: pl.position, ...(koAgg[pl.id] || {}) }, scout) });
-
-  const hideSubs = ko.open; // durante a janela de troca, esconde as trocas dos OUTROS
+  const fromSnap = (snap, starter) => snap.players.filter((x) => x.isStarter === starter).map((x) => byId[x.playerId]).filter(Boolean).map(withKo);
 
   const squads = parts.filter((p) => p.squad || snapshot[p.id]).map((p) => {
     const isMe = p.id === me.id;
     const live = p.squad;
     const snap = snapshot[p.id];
-    const showLive = isMe || !hideSubs || !snap; // outros, na janela, veem o time congelado
     let starters = [], reserves = [], captainId = null, formation = "4-3-3", subbedInIds = [], subbedOut = [];
-    if (showLive && live) {
+    if (showGroup && snap) {
+      // Time da FASE DE GRUPOS (congelado)
+      starters = fromSnap(snap, true);
+      reserves = fromSnap(snap, false);
+      captainId = snap.captainId;
+      formation = snap.formation || "4-3-3";
+    } else if (live) {
+      // Time do MATA-MATA (ao vivo), com as trocas marcadas
       starters = live.players.filter((sp) => sp.isStarter).map((sp) => withKo(sp.player));
       reserves = live.players.filter((sp) => !sp.isStarter).map((sp) => withKo(sp.player));
       captainId = live.captainId;
       formation = live.formation || "4-3-3";
       if (snap) {
-        // marca trocas (só chega aqui quem mostra o time ao vivo: eu sempre, e os outros só após a janela fechar)
         const snapSet = new Set(snap.players.map((x) => x.playerId));
         const liveSet = new Set(live.players.map((sp) => sp.playerId));
         subbedInIds = [...liveSet].filter((id) => !snapSet.has(id));
         subbedOut = snap.players.filter((x) => !liveSet.has(x.playerId)).map((x) => byId[x.playerId]).filter(Boolean).map(withKo);
       }
     } else if (snap) {
-      starters = snap.players.filter((x) => x.isStarter).map((x) => byId[x.playerId]).filter(Boolean).map(withKo);
-      reserves = snap.players.filter((x) => !x.isStarter).map((x) => byId[x.playerId]).filter(Boolean).map(withKo);
+      starters = fromSnap(snap, true);
+      reserves = fromSnap(snap, false);
       captainId = snap.captainId;
       formation = snap.formation || "4-3-3";
     }
     return { participantId: p.id, name: p.name, avatarUrl: p.avatarUrl, formation, captainId, starters, reserves, subbedInIds, subbedOut, isMe };
   });
 
-  return Response.json({ locked: true, koOpen: ko.open, squads });
+  return Response.json({ locked: true, koStarted: ko.started, squads });
 }
 
 export const dynamic = "force-dynamic";

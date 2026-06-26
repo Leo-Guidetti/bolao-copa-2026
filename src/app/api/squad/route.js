@@ -20,9 +20,10 @@ export async function GET() {
   const squad = await prisma.squad.findUnique({ where: { participantId: p.id }, include: { players: true } });
   const ko = await getKoWindow();
   if (!squad) return Response.json(null);
-  // Time congelado (base) pra marcar/contar as trocas (sempre que houver snapshot, mesmo fora da janela).
-  const snapshotIds = await snapshotIdsFor(p.id);
-  return Response.json({ ...squad, koOpen: ko.open, koDeadline: ko.deadline, koMaxSubs: ko.maxSubs, snapshotIds });
+  // Time congelado (base) pra marcar/contar as trocas e exibir o time de grupos no toggle.
+  const snapshot = await snapshotFor(p.id);
+  const snapshotIds = snapshot ? snapshot.players.map((x) => x.playerId) : null;
+  return Response.json({ ...squad, koOpen: ko.open, koStarted: ko.started, koDeadline: ko.deadline, koMaxSubs: ko.maxSubs, snapshotIds, snapshot });
 }
 
 export async function POST(req) {

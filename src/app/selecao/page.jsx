@@ -20,6 +20,8 @@ export default function SelecaoPage() {
   const [showInfo, setShowInfo] = useState(false);
   const [lock, setLock] = useState(null);
   const [snapIds, setSnapIds] = useState(null);
+  const [snapFull, setSnapFull] = useState(null);
+  const [phaseView, setPhaseView] = useState("mata"); // "grupos" | "mata"
   const [formation, setFormation] = useState(DEFAULT_FORMATION);
   const [pickedIds, setPickedIds] = useState([]);
   const [camisa10Id, setCamisa10Id] = useState("");
@@ -50,6 +52,8 @@ export default function SelecaoPage() {
         setCamisa10Id(sq.captainId || "");
         setPickedIds(sq.players.map((p) => p.playerId));
         setSnapIds(sq.snapshotIds || null);
+        setSnapFull(sq.snapshot || null);
+        setPhaseView(sq.koStarted ? "mata" : (sq.snapshot ? "grupos" : "mata"));
       }
     });
   }, [me]);
@@ -64,6 +68,16 @@ export default function SelecaoPage() {
   const playerById = useMemo(() => Object.fromEntries(players.map((p) => [p.id, p])), [players]);
   const subbedInIds = useMemo(() => (snapIds ? pickedIds.filter((id) => !snapSet.has(id)) : []), [snapIds, pickedIds, snapSet]);
   const subbedOut = useMemo(() => (snapIds ? snapIds.filter((id) => !pickedIds.includes(id)).map((id) => playerById[id]).filter(Boolean) : []), [snapIds, pickedIds, playerById]);
+  // Time da fase de grupos (snapshot) reconstruído pra exibir no toggle.
+  const groupSquad = useMemo(() => {
+    if (!snapFull) return null;
+    return {
+      formation: snapFull.formation || DEFAULT_FORMATION,
+      captainId: snapFull.captainId,
+      starters: snapFull.players.filter((x) => x.isStarter).map((x) => playerById[x.playerId]).filter(Boolean),
+      reserves: snapFull.players.filter((x) => !x.isStarter).map((x) => playerById[x.playerId]).filter(Boolean),
+    };
+  }, [snapFull, playerById]);
   const shape = FORMATIONS[formation];
   const starterNeed = { GOL: 1, ZAG: shape.ZAG, LAT: shape.LAT, MEI: shape.MEI, ATA: shape.ATA };
   const capOf = (pos) => starterNeed[pos] + RESERVES[pos];
@@ -292,6 +306,24 @@ export default function SelecaoPage() {
         </div>
       )}
 
+      {snapFull && (
+        <div className="flex justify-center">
+          <div className="flex rounded-full bg-[var(--hover)] p-0.5 text-sm">
+            <button type="button" onClick={() => setPhaseView("grupos")} className={`rounded-full px-4 py-1 transition ${phaseView === "grupos" ? "bg-[var(--surface)] font-semibold shadow" : "text-[var(--muted)]"}`}>⚽ Fase de grupos</button>
+            <button type="button" onClick={() => setPhaseView("mata")} className={`rounded-full px-4 py-1 transition ${phaseView === "mata" ? "bg-[var(--surface)] font-semibold shadow" : "text-[var(--muted)]"}`}>🔁 Mata-mata</button>
+          </div>
+        </div>
+      )}
+
+      {phaseView === "grupos" && groupSquad ? (
+        <div className="space-y-2">
+          <div className="card border-l-4 border-l-brand p-3 text-sm text-[var(--muted)]">⚽ <b className="text-[var(--text)]">Time da fase de grupos</b> (congelado) — pontua os jogos dos grupos. Pra fazer as trocas do mata-mata, vá na aba <b>Mata-mata</b>.</div>
+          <div className="max-w-[340px]">
+            <Pitch formation={groupSquad.formation} starters={groupSquad.starters} reserves={groupSquad.reserves} camisa10Id={groupSquad.captainId} capMult={capMult} showPoints pointsOf={(pl) => ptsOf(pl) * (pl.id === groupSquad.captainId ? capMult : 1)} onPlayer={setDetail} />
+          </div>
+        </div>
+      ) : (
+      <>
       <div className="card flex flex-wrap items-center gap-3 p-4">
         <span className="text-sm text-[var(--muted)]">Time de <b className="text-[var(--text)]">{me?.name || "..."}</b></span>
         <select className="input max-w-[8rem]" value={formation} disabled={readOnly} onChange={(e) => changeFormation(e.target.value)}>
@@ -396,6 +428,8 @@ export default function SelecaoPage() {
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

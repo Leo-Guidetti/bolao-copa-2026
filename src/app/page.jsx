@@ -1,5 +1,6 @@
 import { currentParticipant } from "@/lib/session";
 import { computeStandings } from "@/lib/standings";
+import { getKoWindow } from "@/lib/locks";
 import { prisma } from "@/lib/prisma";
 import { flagUrl, teamAbbr } from "@/lib/flags";
 import PlayerAvatar from "@/components/PlayerAvatar";
@@ -53,6 +54,30 @@ export default async function HomePage() {
   const budgetCap = settings.squadRules?.budgetCap ?? 50;
   const squadCost = squad ? squad.players.reduce((s, sp) => s + (sp.player?.price || 0), 0) : 0;
   const squadOver = !!squad && squadCost > budgetCap;
+
+  // Trocas do mata-mata: marca/zera os que entraram (só pontuam no mata-mata) e separa os que saíram.
+  const snapRow = await prisma.setting.findUnique({ where: { key: "groupSquadSnapshot" } });
+  let snapshot = {};
+  try { snapshot = JSON.parse(snapRow?.value || "{}"); } catch {}
+  const mySnap = snapshot[me.id];
+  const liveIds = squad ? squad.players.map((p) => p.playerId) : [];
+  const liveSet = new Set(liveIds);
+  const snapSet = new Set(mySnap ? mySnap.players.map((x) => x.playerId) : []);
+  const subbedInIds = mySnap ? liveIds.filter((id) => !snapSet.has(id)) : [];
+  const subbedOutIds = mySnap ? mySnap.players.map((x) => x.playerId).filter((id) => !liveSet.has(id)) : [];
+  const subbedOut = subbedOutIds.length ? await prisma.player.findMany({ where: { id: { in: subbedOutIds } } }) : [];
+
+  // Mostra o TIME QUE ESTÁ PONTUANDO: fase de grupos (snapshot) até o mata-mata começar; depois o time do mata-mata.
+  const koWin = await getKoWindow();
+  let dispStarters = starters, dispReserves = reserves, dispCaptain = squad?.captainId, dispFormation = squad?.formation || "4-3-3", dispSubIn = subbedInIds, dispSubOut = subbedOut;
+  if (!koWin.started && mySnap) {
+    const snapObjs = await prisma.player.findMany({ where: { id: { in: mySnap.players.map((x) => x.playerId) } } });
+    const sById = Object.fromEntries(snapObjs.map((p) => [p.id, p]));
+    dispStarters = mySnap.players.filter((x) => x.isStarter).map((x) => sById[x.playerId]).filter(Boolean);
+    dispReserves = mySnap.players.filter((x) => !x.isStarter).map((x) => sById[x.playerId]).filter(Boolean);
+    dispCaptain = mySnap.captainId; dispFormation = mySnap.formation || "4-3-3";
+    dispSubIn = []; dispSubOut = [];
+  }
 
   // Craque do dia: melhor jogador (por pontos no jogo) dos jogos de ONTEM.
   // Dia "lógico" do jogo: madrugada até 4h (BRT) conta como o dia anterior.
@@ -263,7 +288,7 @@ export default async function HomePage() {
               </div>
             )}
             <div className="mt-3 max-w-[320px]">
-              <ScoredPitch formation={squad.formation || "4-3-3"} starters={starters} reserves={reserves} captainId={squad.captainId} scout={sq.scout} capMult={sq.camisa10Multiplier ?? 2} />
+              <ScoredPitch formation={dispFormation} starters={dispStarters} reserves={dispReserves} captainId={dispCaptain} scout={sq.scout} capMult={sq.camisa10Multiplier ?? 2} subbedInIds={dispSubIn} subbedOut={dispSubOut} />
             </div>
           </>
         ) : (

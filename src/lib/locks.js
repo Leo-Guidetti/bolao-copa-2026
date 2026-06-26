@@ -18,5 +18,8 @@ export async function getKoWindow() {
   try { cfg = JSON.parse(s?.value || "{}"); } catch {}
   const deadline = cfg.deadline || null;
   const open = !!cfg.open && (!deadline || Date.now() < new Date(deadline).getTime());
-  return { open, deadline, maxSubs: cfg.maxSubs ?? 4 };
+  // "started" = o mata-mata começou (passou do corte: 30min antes do 1º jogo). A partir daqui o time
+  // que pontua passa a ser o do mata-mata.
+  const started = !!deadline && Date.now() >= new Date(deadline).getTime();
+  return { open, deadline, maxSubs: cfg.maxSubs ?? 4, started };
 }
