@@ -77,8 +77,8 @@ export default function Pitch({ formation, starters = [], reserves = [], camisa1
 
       {subbedOut.length > 0 && (
         <div className="card border-l-4 border-l-amber-500 p-2">
-          <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wide text-amber-600">🔁 Substituídos · só pontuaram nos grupos</div>
-          <div className="flex items-start gap-1 overflow-x-auto">
+          <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wide text-amber-600">🔄 Substituídos · só pontuaram nos grupos</div>
+          <div className="flex flex-wrap items-start gap-1">
             {subbedOut.map((pl) => (
               <Slot key={pl.id} slot={{ pos: pl.position, player: pl }} camisa10Id={camisa10Id} capMult={capMult} showPoints={showPoints} pointsOf={pointsOf} onPlayer={onPlayer} mineIds={mineIds} subbed dark />
             ))}
@@ -112,8 +112,8 @@ function Slot({ slot, camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPo
         </span>
         {flag && <span className="absolute -bottom-1 -left-1 h-5 w-5 overflow-hidden rounded-full ring-2 ring-[var(--surface)]"><img src={flag} alt={player.team} className="h-full w-full object-cover" /></span>}
 
-        {/* Selo de substituído (mata-mata) — só o emoji de setas */}
-        {subbed && !onRemove && <span className="absolute -right-2 -top-2 text-sm leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]" title="Substituído (vale só no mata-mata)">🔄</span>}
+        {/* Selo de substituído (mata-mata) — só o emoji de setas, dentro do canto pra não cortar */}
+        {subbed && !onRemove && <span className="absolute right-0 top-0 text-[13px] leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]" title="Substituído (vale só no mata-mata)">🔄</span>}
 
         {/* Botão camisa 10 (ou selo estático no modo leitura) */}
         {onToggleCaptain ? (

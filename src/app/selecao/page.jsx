@@ -316,11 +316,39 @@ export default function SelecaoPage() {
       )}
 
       {phaseView === "grupos" && groupSquad ? (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="card border-l-4 border-l-brand p-3 text-sm text-[var(--muted)]">⚽ <b className="text-[var(--text)]">Time da fase de grupos</b> (congelado) — pontua os jogos dos grupos. Pra fazer as trocas do mata-mata, vá na aba <b>Mata-mata</b>.</div>
-          <div className="max-w-[340px]">
-            <Pitch formation={groupSquad.formation} starters={groupSquad.starters} reserves={groupSquad.reserves} camisa10Id={groupSquad.captainId} capMult={capMult} showPoints pointsOf={(pl) => ptsOf(pl) * (pl.id === groupSquad.captainId ? capMult : 1)} onPlayer={setDetail} />
+          <div className="flex justify-center">
+            <div className="flex rounded-full bg-[var(--hover)] p-0.5 text-xs">
+              <button type="button" onClick={() => setViewMode("campo")} className={`rounded-full px-3 py-1 transition ${viewMode === "campo" ? "bg-[var(--surface)] font-semibold shadow" : "text-[var(--muted)]"}`}>Campo</button>
+              <button type="button" onClick={() => setViewMode("lista")} className={`rounded-full px-3 py-1 transition ${viewMode === "lista" ? "bg-[var(--surface)] font-semibold shadow" : "text-[var(--muted)]"}`}>Lista</button>
+            </div>
           </div>
+          {viewMode === "campo" ? (
+            <div className="mx-auto max-w-[340px]">
+              <Pitch formation={groupSquad.formation} starters={groupSquad.starters} reserves={groupSquad.reserves} camisa10Id={groupSquad.captainId} capMult={capMult} showPoints pointsOf={(pl) => ptsOf(pl) * (pl.id === groupSquad.captainId ? capMult : 1)} onPlayer={setDetail} />
+            </div>
+          ) : (
+            <div className="card mx-auto max-w-md overflow-hidden p-0">
+              <div className="divide-y divide-[var(--border)]">
+                {[...groupSquad.starters, ...groupSquad.reserves]
+                  .map((pl) => ({ pl, pts: ptsOf(pl) * (pl.id === groupSquad.captainId ? capMult : 1), cap: pl.id === groupSquad.captainId }))
+                  .sort((a, b) => b.pts - a.pts)
+                  .map(({ pl, pts, cap }, i) => (
+                    <div key={pl.id} onClick={() => setDetail(pl)} className="flex cursor-pointer items-center gap-2 px-3 py-2">
+                      <span className="w-5 shrink-0 text-center text-[11px] font-bold text-[var(--faint)]">{i + 1}</span>
+                      <PlayerAvatar player={pl} size="sm" />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-1 truncate text-sm font-medium">{pl.name}{cap && <span className="pill bg-accent/20 text-[9px] font-bold text-yellow-700">C10</span>}</span>
+                        <span className="block truncate text-[11px] text-[var(--faint)]">{pl.position} · {teamFull(pl.team)}</span>
+                      </span>
+                      <span className={`flex shrink-0 items-center gap-0.5 text-sm font-bold tabular-nums ${cap ? "text-yellow-600" : pts < 0 ? "text-red-500" : ""}`}>{pts.toFixed(1)}{cap && <span className="rounded bg-accent/20 px-1 text-[9px] font-extrabold text-yellow-700">×{capMult}</span>}<span className="ml-0.5 text-[10px] font-normal text-[var(--faint)]">pts</span></span>
+                      <span className="pill shrink-0 bg-accent/15 font-semibold text-yellow-700">{pl.price}¢</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
       <>
