@@ -38,6 +38,27 @@ function Flag({ team, align }) {
   );
 }
 
+// Vaga de mata-mata que vem de um confronto JÁ definido: "Vencedor de A × B" com bandeiras.
+function MiniFlag({ team }) {
+  const url = flagUrl(team);
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className="flex h-4 w-6 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-[var(--hover)]">{url && <img src={url} alt={team} className="h-full w-full object-cover" />}</span>
+      <span className="text-xs font-medium">{teamAbbr(team)}</span>
+    </span>
+  );
+}
+function KoFeeder({ f, align }) {
+  return (
+    <span className={`flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] ${align === "right" ? "justify-end text-right" : ""}`}>
+      <span className="whitespace-nowrap text-[var(--faint)]">Vencedor de</span>
+      <MiniFlag team={f.home} />
+      <span className="text-[var(--faint)]">×</span>
+      <MiniFlag team={f.away} />
+    </span>
+  );
+}
+
 const num = (v) => (v === "" || v == null ? null : Number(v));
 // Mata-mata: quem o jogador acha que classifica. Vitória define automático; empate exige a escolha (g.adv).
 function effAdvance(m, g) {
@@ -55,7 +76,9 @@ function betComplete(m, g) {
   return effAdvance(m, g) != null; // no mata-mata precisa de quem classifica
 }
 
-function Row({ m, g, savedG, lock, onChange, onAdvance, onSaveOne, savingId, scoring, onOpen, now = Date.now(), koBetsOpen = false }) {
+function Row({ m, g, savedG, lock, onChange, onAdvance, onSaveOne, savingId, scoring, onOpen, now = Date.now(), koBetsOpen = false, feederOf = () => null }) {
+  const homeFeeder = feederOf(m.homeTeam);
+  const awayFeeder = feederOf(m.awayTeam);
   const done = m.finished && m.homeScore != null && m.awayScore != null;
   const tbd = !flagUrl(m.homeTeam) || !flagUrl(m.awayTeam) || (m.stage !== "GROUP" && !koBetsOpen); // só aposta com os dois times reais e mata-mata liberado
   const lockAt = new Date(m.kickoff).getTime() - BET_LOCK_MS;
@@ -77,11 +100,11 @@ function Row({ m, g, savedG, lock, onChange, onAdvance, onSaveOne, savingId, sco
         {showCount && <span className="ml-1.5 font-bold text-emerald-400" style={{ textShadow: "0 0 8px rgba(16,185,129,0.7)" }}>⏱ fecha em {fmtRemain(lockAt - now)}</span>}
       </div>
       <div className="flex items-center gap-2">
-        <div className="flex-1"><Flag team={m.homeTeam} align="right" /></div>
+        <div className="flex-1">{homeFeeder ? <KoFeeder f={homeFeeder} align="right" /> : <Flag team={m.homeTeam} align="right" />}</div>
         <input type="number" inputMode="numeric" min="0" disabled={lock} className="input w-12 px-0 text-center" value={g.home ?? ""} onChange={(e) => onChange(m.id, "home", e.target.value)} />
         <span className="text-[var(--faint)]">×</span>
         <input type="number" inputMode="numeric" min="0" disabled={lock} className="input w-12 px-0 text-center" value={g.away ?? ""} onChange={(e) => onChange(m.id, "away", e.target.value)} />
-        <div className="flex-1"><Flag team={m.awayTeam} /></div>
+        <div className="flex-1">{awayFeeder ? <KoFeeder f={awayFeeder} /> : <Flag team={m.awayTeam} /></div>
       </div>
       {!done && isKo && hasScore && !lock && (
         <div className="mt-1.5 flex items-center justify-center gap-2 text-[11px]" onClick={(e) => e.stopPropagation()}>
@@ -165,6 +188,20 @@ export default function ApostasPage() {
     }, 0);
   }, [matches, guesses, scoring]);
   const matchById = useMemo(() => Object.fromEntries(matches.map((m) => [m.id, m])), [matches]);
+  // Mapa: jogo N das 16-avos (1..16) -> partida da R32 (ordenada por 'order').
+  const r32ByGame = useMemo(() => {
+    const r32 = matches.filter((m) => m.stage === "R32").sort((a, b) => a.order - b.order);
+    const map = {}; r32.forEach((m, i) => { map[i + 1] = m; });
+    return map;
+  }, [matches]);
+  // Para uma vaga "Venc. 16-avos N": se o confronto da R32 já está definido, devolve {home, away}; senão null (mantém TBD).
+  const feederOf = (teamName) => {
+    const mt = /16-avos\s*(\d+)/i.exec(teamName || "");
+    if (!mt) return null;
+    const g = r32ByGame[Number(mt[1])];
+    if (!g || !flagUrl(g.homeTeam) || !flagUrl(g.awayTeam)) return null;
+    return { home: g.homeTeam, away: g.awayTeam };
+  };
   const tbd = (m) => !flagUrl(m.homeTeam) || !flagUrl(m.awayTeam) || (m.stage !== "GROUP" && !koBetsOpen);
   const locked = (m) => m.finished || tbd(m) || new Date(m.kickoff).getTime() - BET_LOCK_MS <= now;
   const pendingCount = useMemo(() => {
@@ -296,7 +333,7 @@ export default function ApostasPage() {
               {[1, 2, 3].map((r) => (
                 <div key={r} className="mt-2">
                   <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--faint)]">Rodada {r}</div>
-                  <div className="divide-y divide-[var(--border)]">{(groups[gl][r] || []).map((m) => <Row key={m.id} m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onAdvance={setAdvance} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} koBetsOpen={koBetsOpen} />)}</div>
+                  <div className="divide-y divide-[var(--border)]">{(groups[gl][r] || []).map((m) => <Row key={m.id} m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onAdvance={setAdvance} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} koBetsOpen={koBetsOpen} feederOf={feederOf} />)}</div>
                 </div>
               ))}
             </div>
@@ -311,7 +348,7 @@ export default function ApostasPage() {
             <div key={s} className="card p-4">
               <h3 className="mb-2 font-semibold">{STAGE_LABELS[s]}</h3>
               <div className="divide-y divide-[var(--border)]">
-                {knockout[s].map((m, i) => (<div key={m.id}><div className="pt-2 text-[11px] text-[var(--faint)]">Jogo {i + 1}</div><Row m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onAdvance={setAdvance} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} koBetsOpen={koBetsOpen} /></div>))}
+                {knockout[s].map((m, i) => (<div key={m.id}><div className="pt-2 text-[11px] text-[var(--faint)]">Jogo {i + 1}</div><Row m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onAdvance={setAdvance} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} koBetsOpen={koBetsOpen} feederOf={feederOf} /></div>))}
               </div>
               <p className="mt-2 text-xs text-[var(--faint)]">Confrontos definidos após a fase de grupos.</p>
             </div>
@@ -345,7 +382,7 @@ export default function ApostasPage() {
                   {d.items.map((m) => (
                     <div key={m.id}>
                       <div className="pt-1 text-center text-[10px] font-medium text-[var(--muted)]">{tag(m)}</div>
-                      <Row m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onAdvance={setAdvance} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} koBetsOpen={koBetsOpen} />
+                      <Row m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onAdvance={setAdvance} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} koBetsOpen={koBetsOpen} feederOf={feederOf} />
                     </div>
                   ))}
                 </div>
