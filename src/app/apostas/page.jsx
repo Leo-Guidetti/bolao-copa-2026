@@ -104,7 +104,7 @@ function Row({ m, g, savedG, lock, onChange, onAdvance, onSaveOne, savingId, sco
         <input type="number" inputMode="numeric" min="0" disabled={lock} className="input w-12 px-0 text-center" value={g.home ?? ""} onChange={(e) => onChange(m.id, "home", e.target.value)} />
         <span className="text-[var(--faint)]">×</span>
         <input type="number" inputMode="numeric" min="0" disabled={lock} className="input w-12 px-0 text-center" value={g.away ?? ""} onChange={(e) => onChange(m.id, "away", e.target.value)} />
-        <div className="flex-1">{awayFeeder ? <KoFeeder f={awayFeeder} /> : <Flag team={m.awayTeam} /></div>
+        <div className="flex-1">{awayFeeder ? <KoFeeder f={awayFeeder} /> : <Flag team={m.awayTeam} />}</div>
       </div>
       {!done && isKo && hasScore && !lock && (
         <div className="mt-1.5 flex items-center justify-center gap-2 text-[11px]" onClick={(e) => e.stopPropagation()}>
