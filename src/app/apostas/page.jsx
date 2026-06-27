@@ -86,20 +86,17 @@ function Row({ m, g, savedG, lock, onChange, onAdvance, onSaveOne, savingId, sco
       {!done && isKo && hasScore && !lock && (
         <div className="mt-1.5 flex items-center justify-center gap-2 text-[11px]" onClick={(e) => e.stopPropagation()}>
           <span className="text-[var(--faint)]">Classifica:</span>
-          {decisive ? (
-            <span className="flex items-center gap-1 rounded-full bg-brand-light px-2 py-0.5 font-semibold text-brand-dark">
-              <Flag team={advTeam} /> <span className="text-[9px] font-bold uppercase text-brand-dark/70">auto</span>
-            </span>
-          ) : (
-            <div className="flex gap-1">
-              {[["home", m.homeTeam], ["away", m.awayTeam]].map(([side, team]) => (
-                <button key={side} type="button" onClick={() => onAdvance(m.id, side)}
-                  className={`flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition ${g.adv === side ? "border-brand bg-brand-light text-brand-dark" : "border-[var(--border)] text-[var(--muted)] hover:bg-[var(--hover)]"}`}>
-                  <Flag team={team} /> {teamAbbr(team)}
+          <div className="flex gap-1">
+            {[["home", m.homeTeam], ["away", m.awayTeam]].map(([side, team]) => {
+              const selected = eff === side;
+              return (
+                <button key={side} type="button" onClick={decisive ? undefined : () => onAdvance(m.id, side)}
+                  className={`flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition ${selected ? "border-brand bg-brand-light text-brand-dark" : "border-[var(--border)] text-[var(--muted)]"} ${decisive ? "cursor-default" : "hover:bg-[var(--hover)]"}`}>
+                  <Flag team={team} />
                 </button>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
         </div>
       )}
       {!done && (
