@@ -26,10 +26,21 @@ export async function POST(req) {
     if (!flagUrl(m.homeTeam) || !flagUrl(m.awayTeam)) continue; // não aposta em vaga ainda indefinida (mata-mata)
     if (m.stage !== "GROUP" && !koBetsOpen) continue; // mata-mata fechado por enquanto
     if (b.homeGuess == null || b.awayGuess == null) continue;
+    const gh = Number(b.homeGuess), ga = Number(b.awayGuess);
+
+    // Quem classifica (só mata-mata): vitória pré-define automaticamente; empate exige a escolha.
+    let advance = null;
+    if (m.stage !== "GROUP") {
+      if (gh > ga) advance = "home";
+      else if (ga > gh) advance = "away";
+      else advance = (b.advance === "home" || b.advance === "away") ? b.advance : null;
+      if (advance == null) continue; // empate no mata-mata sem escolher quem passa: não salva
+    }
+
     await prisma.bet.upsert({
       where: { participantId_matchId: { participantId: p.id, matchId: b.matchId } },
-      update: { homeGuess: Number(b.homeGuess), awayGuess: Number(b.awayGuess) },
-      create: { participantId: p.id, matchId: b.matchId, homeGuess: Number(b.homeGuess), awayGuess: Number(b.awayGuess) },
+      update: { homeGuess: gh, awayGuess: ga, advance },
+      create: { participantId: p.id, matchId: b.matchId, homeGuess: gh, awayGuess: ga, advance },
     });
     saved++;
   }

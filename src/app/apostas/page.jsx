@@ -38,15 +38,38 @@ function Flag({ team, align }) {
   );
 }
 
-function Row({ m, g, savedG, lock, onChange, onSaveOne, savingId, scoring, onOpen, now = Date.now(), koBetsOpen = false }) {
+const num = (v) => (v === "" || v == null ? null : Number(v));
+// Mata-mata: quem o jogador acha que classifica. Vitória define automático; empate exige a escolha (g.adv).
+function effAdvance(m, g) {
+  if (!g) return null;
+  const h = num(g.home), a = num(g.away);
+  if (h == null || a == null || m.stage === "GROUP") return null;
+  if (h > a) return "home";
+  if (a > h) return "away";
+  return g.adv === "home" || g.adv === "away" ? g.adv : null;
+}
+function betComplete(m, g) {
+  const h = num(g?.home), a = num(g?.away);
+  if (h == null || a == null) return false;
+  if (m.stage === "GROUP") return true;
+  return effAdvance(m, g) != null; // no mata-mata precisa de quem classifica
+}
+
+function Row({ m, g, savedG, lock, onChange, onAdvance, onSaveOne, savingId, scoring, onOpen, now = Date.now(), koBetsOpen = false }) {
   const done = m.finished && m.homeScore != null && m.awayScore != null;
   const tbd = !flagUrl(m.homeTeam) || !flagUrl(m.awayTeam) || (m.stage !== "GROUP" && !koBetsOpen); // só aposta com os dois times reais e mata-mata liberado
   const lockAt = new Date(m.kickoff).getTime() - BET_LOCK_MS;
   const showCount = !done && !tbd && now < lockAt;
-  const hasGuess = g && g.home !== "" && g.home != null && g.away !== "" && g.away != null;
-  const isSaved = hasGuess && savedG && String(savedG.home) === String(g.home) && String(savedG.away) === String(g.away);
-  const pending = hasGuess && !isSaved;
-  const pts = done && hasGuess && scoring ? betPoints({ homeGuess: Number(g.home), awayGuess: Number(g.away) }, m, scoring) : 0;
+  const isKo = m.stage !== "GROUP";
+  const hasScore = g && g.home !== "" && g.home != null && g.away !== "" && g.away != null;
+  const decisive = hasScore && Number(g.home) !== Number(g.away);
+  const drawNoPick = hasScore && isKo && !decisive && !(g.adv === "home" || g.adv === "away");
+  const eff = effAdvance(m, g);
+  const complete = betComplete(m, g);
+  const isSaved = complete && savedG && String(savedG.home) === String(g.home) && String(savedG.away) === String(g.away) && (savedG.adv || null) === (eff || null);
+  const pending = complete && !isSaved;
+  const advTeam = eff === "home" ? m.homeTeam : eff === "away" ? m.awayTeam : null;
+  const pts = done && hasScore && scoring ? betPoints({ homeGuess: Number(g.home), awayGuess: Number(g.away) }, m, scoring) : 0;
   return (
     <div className={`py-2 ${lock ? "cursor-pointer opacity-80 hover:bg-[var(--hover)]" : ""}`} onClick={lock && onOpen ? () => onOpen(m) : undefined} title={lock ? "Ver palpites de todos" : undefined}>
       <div className="mb-0.5 text-center text-[10px] text-[var(--faint)]">
@@ -60,18 +83,38 @@ function Row({ m, g, savedG, lock, onChange, onSaveOne, savingId, scoring, onOpe
         <input type="number" inputMode="numeric" min="0" disabled={lock} className="input w-12 px-0 text-center" value={g.away ?? ""} onChange={(e) => onChange(m.id, "away", e.target.value)} />
         <div className="flex-1"><Flag team={m.awayTeam} /></div>
       </div>
+      {!done && isKo && hasScore && !lock && (
+        <div className="mt-1.5 flex items-center justify-center gap-2 text-[11px]" onClick={(e) => e.stopPropagation()}>
+          <span className="text-[var(--faint)]">Classifica:</span>
+          {decisive ? (
+            <span className="flex items-center gap-1 rounded-full bg-brand-light px-2 py-0.5 font-semibold text-brand-dark">
+              <Flag team={advTeam} /> <span className="text-[9px] font-bold uppercase text-brand-dark/70">auto</span>
+            </span>
+          ) : (
+            <div className="flex gap-1">
+              {[["home", m.homeTeam], ["away", m.awayTeam]].map(([side, team]) => (
+                <button key={side} type="button" onClick={() => onAdvance(m.id, side)}
+                  className={`flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition ${g.adv === side ? "border-brand bg-brand-light text-brand-dark" : "border-[var(--border)] text-[var(--muted)] hover:bg-[var(--hover)]"}`}>
+                  <Flag team={team} /> {teamAbbr(team)}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {!done && (
         <div className="mt-1 flex items-center justify-center gap-2">
-          {isSaved && <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-500">✓ Salvo · {g.home}×{g.away}</span>}
+          {isSaved && <span className="flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-500">✓ Salvo · {g.home}×{g.away}{advTeam && <> · classifica <Flag team={advTeam} /></>}</span>}
           {pending && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] font-semibold text-amber-600">● Não salvo</span>}
-          {!hasGuess && <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-semibold text-red-500">⚠ Sem palpite</span>}
+          {drawNoPick && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] font-semibold text-amber-600">⚠ Escolha quem classifica</span>}
+          {!hasScore && <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-semibold text-red-500">⚠ Sem palpite</span>}
           {pending && !lock && <button type="button" onClick={(e) => { e.stopPropagation(); onSaveOne(m.id); }} disabled={savingId === m.id} className="rounded-full bg-brand px-3 py-0.5 text-[11px] font-semibold text-white transition hover:bg-brand-dark disabled:opacity-60">{savingId === m.id ? "Salvando…" : "Salvar"}</button>}
         </div>
       )}
       {done && (
         <div className="mt-1 flex items-center justify-center gap-2 text-[11px]">
           <span className="text-[var(--faint)]">Resultado real: <b className="tabular-nums text-[var(--text)]">{m.homeScore} × {m.awayScore}</b></span>
-          {hasGuess
+          {hasScore
             ? <span className={`pill font-bold ${pts > 0 ? "bg-brand-light text-brand-dark" : "bg-[var(--hover)] text-[var(--muted)]"}`}>{pts > 0 ? `+${fmtPts(pts)}` : "0"} pts</span>
             : <span className="pill bg-[var(--hover)] text-[var(--faint)]">sem palpite</span>}
         </div>
@@ -105,7 +148,7 @@ export default function ApostasPage() {
     if (!me) return;
     fetch("/api/bets").then((r) => r.json()).then((bets) => {
       const g = {};
-      for (const b of bets) g[b.matchId] = { home: b.homeGuess, away: b.awayGuess };
+      for (const b of bets) g[b.matchId] = { home: b.homeGuess, away: b.awayGuess, adv: b.advance || undefined };
       setGuesses(g);
       setSaved(JSON.parse(JSON.stringify(g)));
     });
@@ -124,6 +167,7 @@ export default function ApostasPage() {
       return s;
     }, 0);
   }, [matches, guesses, scoring]);
+  const matchById = useMemo(() => Object.fromEntries(matches.map((m) => [m.id, m])), [matches]);
   const tbd = (m) => !flagUrl(m.homeTeam) || !flagUrl(m.awayTeam) || (m.stage !== "GROUP" && !koBetsOpen);
   const locked = (m) => m.finished || tbd(m) || new Date(m.kickoff).getTime() - BET_LOCK_MS <= now;
   const pendingCount = useMemo(() => {
@@ -131,9 +175,9 @@ export default function ApostasPage() {
     for (const m of matches) {
       if (m.finished || tbd(m) || new Date(m.kickoff).getTime() - BET_LOCK_MS <= now) continue;
       const g = guesses[m.id];
-      if (!g || g.home === "" || g.away === "" || g.home == null || g.away == null) continue;
+      if (!betComplete(m, g)) continue;
       const s = saved[m.id];
-      if (!s || String(s.home) !== String(g.home) || String(s.away) !== String(g.away)) n++;
+      if (!s || String(s.home) !== String(g.home) || String(s.away) !== String(g.away) || (s.adv || null) !== (effAdvance(m, g) || null)) n++;
     }
     return n;
   }, [matches, guesses, saved, now]);
@@ -143,23 +187,26 @@ export default function ApostasPage() {
   async function reloadSaved() {
     const bets = await (await fetch("/api/bets")).json();
     const g = {};
-    for (const b of bets) g[b.matchId] = { home: b.homeGuess, away: b.awayGuess };
+    for (const b of bets) g[b.matchId] = { home: b.homeGuess, away: b.awayGuess, adv: b.advance || undefined };
     setSaved(g);
   }
+  // monta o payload só com palpites completos (no mata-mata exige quem classifica)
+  const buildPayload = (g) => Object.entries(g)
+    .filter(([id, v]) => matchById[id] && betComplete(matchById[id], v))
+    .map(([matchId, v]) => ({ matchId, homeGuess: v.home, awayGuess: v.away, advance: effAdvance(matchById[matchId], v) }));
   async function saveOne(id) {
     const v = guessesRef.current[id];
-    if (!v || v.home === "" || v.away === "" || v.home == null || v.away == null) return;
+    const m = matchById[id];
+    if (!m || !betComplete(m, v)) return;
+    const adv = effAdvance(m, v);
     setSavingId(id); setMsg("");
-    const res = await fetch("/api/bets", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bets: [{ matchId: id, homeGuess: v.home, awayGuess: v.away }] }) });
+    const res = await fetch("/api/bets", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bets: [{ matchId: id, homeGuess: v.home, awayGuess: v.away, advance: adv }] }) });
     setSavingId(null);
-    if (res.ok) setSaved((s) => ({ ...s, [id]: { home: v.home, away: v.away } }));
+    if (res.ok) setSaved((s) => ({ ...s, [id]: { home: v.home, away: v.away, adv: adv || undefined } }));
     else { const d = await res.json().catch(() => ({})); setMsg(d.error || "Erro ao salvar (prazo pode ter encerrado)."); }
   }
   async function saveAll() {
-    const g = guessesRef.current;
-    const bets = Object.entries(g)
-      .filter(([, v]) => v && v.home !== "" && v.away !== "" && v.home != null && v.away != null)
-      .map(([matchId, v]) => ({ matchId, homeGuess: v.home, awayGuess: v.away }));
+    const bets = buildPayload(guessesRef.current);
     if (!bets.length) return;
     setSaving(true); setMsg("");
     const res = await fetch("/api/bets", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bets }) });
@@ -170,19 +217,17 @@ export default function ApostasPage() {
   }
   const saveTimer = useRef(null);
   async function autoSave() {
-    const g = guessesRef.current;
-    const bets = Object.entries(g)
-      .filter(([, v]) => v && v.home !== "" && v.away !== "" && v.home != null && v.away != null)
-      .map(([matchId, v]) => ({ matchId, homeGuess: v.home, awayGuess: v.away }));
+    const bets = buildPayload(guessesRef.current);
     if (!bets.length) return;
     setSaving(true);
     const res = await fetch("/api/bets", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bets }) });
     setSaving(false);
-    if (res.ok) { const sv = {}; for (const b of bets) sv[b.matchId] = { home: b.homeGuess, away: b.awayGuess }; setSaved((s) => ({ ...s, ...sv })); setMsg(""); }
+    if (res.ok) { const sv = {}; for (const b of bets) sv[b.matchId] = { home: b.homeGuess, away: b.awayGuess, adv: b.advance || undefined }; setSaved((s) => ({ ...s, ...sv })); setMsg(""); }
     else { const d = await res.json().catch(() => ({})); setMsg(d.error || "Erro ao salvar."); }
   }
   const scheduleSave = () => { clearTimeout(saveTimer.current); saveTimer.current = setTimeout(autoSave, 1000); };
   const setGuess = (id, side, v) => { setGuesses((g) => ({ ...g, [id]: { ...g[id], [side]: v === "" ? "" : Math.max(0, Number(v)) } })); scheduleSave(); };
+  const setAdvance = (id, side) => { setGuesses((g) => ({ ...g, [id]: { ...g[id], adv: side } })); scheduleSave(); };
 
   const groups = useMemo(() => {
     const g = {};
@@ -254,7 +299,7 @@ export default function ApostasPage() {
               {[1, 2, 3].map((r) => (
                 <div key={r} className="mt-2">
                   <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--faint)]">Rodada {r}</div>
-                  <div className="divide-y divide-[var(--border)]">{(groups[gl][r] || []).map((m) => <Row key={m.id} m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} koBetsOpen={koBetsOpen} />)}</div>
+                  <div className="divide-y divide-[var(--border)]">{(groups[gl][r] || []).map((m) => <Row key={m.id} m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onAdvance={setAdvance} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} koBetsOpen={koBetsOpen} />)}</div>
                 </div>
               ))}
             </div>
@@ -269,7 +314,7 @@ export default function ApostasPage() {
             <div key={s} className="card p-4">
               <h3 className="mb-2 font-semibold">{STAGE_LABELS[s]}</h3>
               <div className="divide-y divide-[var(--border)]">
-                {knockout[s].map((m, i) => (<div key={m.id}><div className="pt-2 text-[11px] text-[var(--faint)]">Jogo {i + 1}</div><Row m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} koBetsOpen={koBetsOpen} /></div>))}
+                {knockout[s].map((m, i) => (<div key={m.id}><div className="pt-2 text-[11px] text-[var(--faint)]">Jogo {i + 1}</div><Row m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onAdvance={setAdvance} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} koBetsOpen={koBetsOpen} /></div>))}
               </div>
               <p className="mt-2 text-xs text-[var(--faint)]">Confrontos definidos após a fase de grupos.</p>
             </div>
@@ -303,7 +348,7 @@ export default function ApostasPage() {
                   {d.items.map((m) => (
                     <div key={m.id}>
                       <div className="pt-1 text-center text-[10px] font-medium text-[var(--muted)]">{tag(m)}</div>
-                      <Row m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} koBetsOpen={koBetsOpen} />
+                      <Row m={m} g={guesses[m.id] || {}} savedG={saved[m.id]} lock={locked(m)} onChange={setGuess} onAdvance={setAdvance} onSaveOne={saveOne} savingId={savingId} scoring={scoring} onOpen={setOpenMatch} now={now} koBetsOpen={koBetsOpen} />
                     </div>
                   ))}
                 </div>
