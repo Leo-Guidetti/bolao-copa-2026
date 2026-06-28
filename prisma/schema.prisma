@@ -41,6 +41,7 @@ model Match {
   homeScore Int?
   awayScore Int?
   finished  Boolean  @default(false)
+  advancer  String? // mata-mata: "home" | "away" — quem classificou quando empatou em 90 min (pênaltis/prorrogação)
   order     Int      @default(0)
 
   bets        Bet[]

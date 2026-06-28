@@ -28,20 +28,24 @@ export async function GET(req) {
     const b = byP.get(p.id);
     if (!b) continue;
     const key = `${b.homeGuess}-${b.awayGuess}`;
-    if (!groups.has(key)) groups.set(key, { hg: b.homeGuess, ag: b.awayGuess, names: [] });
-    groups.get(key).names.push(p.name);
+    if (!groups.has(key)) groups.set(key, { hg: b.homeGuess, ag: b.awayGuess, members: [] });
+    groups.get(key).members.push({ name: p.name, bet: b });
   }
   const gArr = [...groups.values()].map((g) => ({
-    ...g, count: g.names.length, total: g.hg + g.ag,
-    points: match.finished ? betPoints({ homeGuess: g.hg, awayGuess: g.ag }, match, scoring) : null,
+    ...g, count: g.members.length, total: g.hg + g.ag,
+    gpts: match.finished ? betPoints({ homeGuess: g.hg, awayGuess: g.ag }, match, scoring) : null, // base p/ ordenar
   })).sort((a, b) => (match.finished
-    ? ((b.points || 0) - (a.points || 0) || b.count - a.count || b.total - a.total)
+    ? ((b.gpts || 0) - (a.gpts || 0) || b.count - a.count || b.total - a.total)
     : (b.count - a.count || b.total - a.total)) || a.hg - b.hg || a.ag - b.ag);
 
   const rows = [];
   for (const g of gArr) {
-    g.names.sort((a, b) => a.localeCompare(b));
-    for (const n of g.names) rows.push({ name: n, homeGuess: g.hg, awayGuess: g.ag, points: g.points, noBet: false });
+    g.members.sort((a, b) => a.name.localeCompare(b.name));
+    for (const mem of g.members) {
+      // pontos por pessoa (inclui o bônus de quem classifica, que varia dentro do mesmo placar)
+      const pts = match.finished ? betPoints(mem.bet, match, scoring) : null;
+      rows.push({ name: mem.name, homeGuess: g.hg, awayGuess: g.ag, points: pts, advance: mem.bet.advance || null, noBet: false });
+    }
   }
   // quem não palpitou vai pro fim
   for (const p of participants.filter((p) => !byP.has(p.id)).sort((a, b) => a.name.localeCompare(b.name))) {

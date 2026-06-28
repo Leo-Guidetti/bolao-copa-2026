@@ -32,6 +32,7 @@ export const DEFAULT_SETTINGS = {
     exactScore: 10, winnerGoalDiff: 7, winnerOnly: 5, teamGoalsBonus: 2, teamGoalsBonusLate: 1, miss: 0,
     phaseMultipliers: { GROUP: 1.0, R32: 1.25, R16: 1.5, QF: 2.0, SF: 2.5, THIRD: 3.0, FINAL: 3.0 },
     zebraBonus: 0,
+    advanceBonus: 2, // mata-mata: previu empate e cravou quem classificou (pênaltis/prorrogação)
   },
   squadRules: {
     budgetCap: 50,

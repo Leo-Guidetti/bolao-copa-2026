@@ -92,7 +92,7 @@ function Row({ m, g, savedG, lock, onChange, onAdvance, onSaveOne, savingId, sco
   const isSaved = complete && savedG && String(savedG.home) === String(g.home) && String(savedG.away) === String(g.away) && (savedG.adv || null) === (eff || null);
   const pending = complete && !isSaved;
   const advTeam = eff === "home" ? m.homeTeam : eff === "away" ? m.awayTeam : null;
-  const pts = done && hasScore && scoring ? betPoints({ homeGuess: Number(g.home), awayGuess: Number(g.away) }, m, scoring) : 0;
+  const pts = done && hasScore && scoring ? betPoints({ homeGuess: Number(g.home), awayGuess: Number(g.away), advance: eff }, m, scoring) : 0;
   return (
     <div className={`py-2 ${lock ? "cursor-pointer opacity-80 hover:bg-[var(--hover)]" : ""}`} onClick={lock && onOpen ? () => onOpen(m) : undefined} title={lock ? "Ver palpites de todos" : undefined}>
       <div className="mb-0.5 text-center text-[10px] text-[var(--faint)]">
@@ -183,7 +183,7 @@ export default function ApostasPage() {
     return matches.reduce((s, m) => {
       const g = guesses[m.id];
       if (m.finished && m.homeScore != null && g && g.home !== "" && g.home != null && g.away !== "" && g.away != null)
-        return s + betPoints({ homeGuess: Number(g.home), awayGuess: Number(g.away) }, m, scoring);
+        return s + betPoints({ homeGuess: Number(g.home), awayGuess: Number(g.away), advance: effAdvance(m, g) }, m, scoring);
       return s;
     }, 0);
   }, [matches, guesses, scoring]);
