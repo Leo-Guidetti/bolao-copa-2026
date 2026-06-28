@@ -203,6 +203,7 @@ export async function run({ prisma, dry = false, log = console.log }) {
       const onTarget = cval(cats, "offensive", "shotsOnTarget");
       const offTarget = cval(cats, "offensive", "shotsOffTarget");
       const onPost = cval(cats, "offensive", "shotsOnPost");
+      const totalShots = cval(cats, "offensive", "totalShots");
       const penMissed = cval(cats, "offensive", "penaltyKicksMissed");
       const gls = cval(cats, "offensive", "totalGoals");
       const firstGame = m.stage === "GROUP" && m.round === 1; // trave só conta a partir do 2º jogo do time
@@ -212,7 +213,7 @@ export async function run({ prisma, dry = false, log = console.log }) {
         goals: gls,
         assists: cval(cats, "offensive", "goalAssists"),
         // Buckets exclusivos (campos separados da ESPN): fora / no alvo (exclui gols) / trave.
-        shots: offTarget,                            // finalização pra fora
+        shots: Math.max(offTarget, totalShots - onTarget - onPost), // fora + finalizações que a ESPN às vezes só reporta no total
         shotsOnTarget: Math.max(0, onTarget - gls),  // no alvo que não viraram gol
         shotsOnPost: firstGame ? 0 : onPost,         // trave (só a partir do 2º jogo do time)
         penaltiesMissed: penMissed,                  // pênalti perdido
