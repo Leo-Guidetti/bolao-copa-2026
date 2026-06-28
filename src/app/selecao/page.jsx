@@ -60,9 +60,16 @@ export default function SelecaoPage() {
 
   const koMode = !!(lock?.locked && lock?.ko?.open); // janela de troca do mata-mata
   const readOnly = !!lock?.locked && !koMode;
+  const koCaptainId = snapFull?.captainId || null; // camisa 10 travado (do time de grupos) durante o mata-mata
   const maxSubs = lock?.ko?.maxSubs ?? 4;
   const snapSet = useMemo(() => new Set(snapIds || []), [snapIds]);
   const subsCount = useMemo(() => (snapIds ? pickedIds.filter((id) => !snapSet.has(id)).length : 0), [pickedIds, snapSet, snapIds]);
+  // No mata-mata o camisa 10 é fixo: garante que ele continue no time e marcado como 10 (recupera se foi removido num estado antigo).
+  useEffect(() => {
+    if (!koMode || !koCaptainId) return;
+    if (camisa10Id !== koCaptainId) setCamisa10Id(koCaptainId);
+    setPickedIds((s) => (s.includes(koCaptainId) ? s : [...s, koCaptainId]));
+  }, [koMode, koCaptainId]);
   // Mercado fechado (e fora da janela de troca): mostra só quem já jogou, ordenado pela pontuação.
   useEffect(() => { if (readOnly || phaseView === "grupos") { setOnlyPlayed(true); setSortBy("pts"); } }, [readOnly, phaseView]);
   const playerById = useMemo(() => Object.fromEntries(players.map((p) => [p.id, p])), [players]);
@@ -141,6 +148,7 @@ export default function SelecaoPage() {
     if (readOnly) return;
     const id = player.id, pos = player.position;
     if (pickedIds.includes(id)) {
+      if (koMode && id === koCaptainId) return setMsg("O camisa 10 não pode sair do time durante o mata-mata.");
       setPickedIds((s) => s.filter((x) => x !== id));
       if (camisa10Id === id) setCamisa10Id("");
       setMsg(""); scheduleSave(); return;
@@ -154,6 +162,7 @@ export default function SelecaoPage() {
   const toggleCaptain = (id) => { if (readOnly || koMode) return; setCamisa10Id((c) => (c === id ? "" : id)); scheduleSave(); };
   function removePlayer(id) {
     if (readOnly) return;
+    if (koMode && id === koCaptainId) return setMsg("O camisa 10 não pode sair do time durante o mata-mata.");
     setPickedIds((s) => s.filter((x) => x !== id));
     if (camisa10Id === id) setCamisa10Id("");
     setMsg(""); scheduleSave();
