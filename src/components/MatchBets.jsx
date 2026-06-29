@@ -106,7 +106,16 @@ export default function MatchBets({ match, onClose }) {
                     <span className="text-xs italic text-[var(--faint)]">sem palpite</span>
                   ) : (
                     <>
-                      <span className="tabular-nums text-[var(--muted)]">{b.homeGuess}×{b.awayGuess}</span>
+                      <span className="flex items-center gap-1.5 tabular-nums text-[var(--muted)]">
+                        {b.homeGuess}×{b.awayGuess}
+                        {b.advance && (
+                          <span className="flex items-center gap-1 text-[var(--faint)]">
+                            <span>|</span>
+                            <Flag team={b.advance === "home" ? match.homeTeam : match.awayTeam} />
+                            <span className="text-[11px]">avança</span>
+                          </span>
+                        )}
+                      </span>
                       {b.points != null && (
                         <span className={`pill font-bold ${b.points > 0 ? "bg-brand-light text-brand-dark" : "bg-[var(--hover)] text-[var(--muted)]"}`}>{fmtPts(b.points)} pts</span>
                       )}
