@@ -35,6 +35,16 @@ export function betPoints(bet, match, scoring) {
   // Bônus de cravar os gols de um time: +2 na 1ª rodada de grupos, +1 da 2ª rodada em diante.
   if (!exact && oneTeamMatch) base += (match.stage === "GROUP" && match.round === 1) ? (scoring.teamGoalsBonus ?? 0) : (scoring.teamGoalsBonusLate ?? 1);
 
+  // Bônus "quem classifica" (só mata-mata): vale quando o jogo EMPATOU em 90 min (decidido na
+  // prorrogação/pênaltis) e o participante apontou o classificado — seja prevendo EMPATE + escolha
+  // explícita de quem passa, seja prevendo VITÓRIA do lado que acabou se classificando.
+  // Se o jogo foi decidido no tempo normal (não empatou), NÃO há bônus: o classificado já vem
+  // por consequência do resultado. Entra na BASE (antes do multiplicador), então escala com a fase.
+  if (match.stage !== "GROUP" && rh === ra && match.advancer) {
+    const predAdvancer = gh > ga ? "home" : ga > gh ? "away" : (bet.advance || null); // vitória prevista -> lado vencedor; empate previsto -> escolha
+    if (predAdvancer && predAdvancer === match.advancer) base += scoring.advanceBonus ?? 2;
+  }
+
   const mult = scoring.phaseMultipliers?.[match.stage] ?? 1;
   let pts = base * mult;
 
@@ -43,14 +53,6 @@ export function betPoints(bet, match, scoring) {
     pts += scoring.zebraBonus;
   }
 
-  // Bônus "quem classifica" (só mata-mata): vale APENAS quando o participante previu EMPATE
-  // (escolha explícita de quem passa) e cravou o classificado. Quem previu um vencedor já leva
-  // os pontos do placar — o classificado vem por consequência, então não ganha o bônus.
-  // O placar acima considera os 90 min; prorrogação/pênaltis entram só aqui, pra definir o classificado.
-  if (match.stage !== "GROUP" && gh === ga && bet.advance) {
-    const actual = rh > ra ? "home" : ra > rh ? "away" : (match.advancer || null); // empate em 90 min -> definido pelo admin
-    if (actual && bet.advance === actual) pts += scoring.advanceBonus ?? 2;
-  }
   return pts;
 }
 
