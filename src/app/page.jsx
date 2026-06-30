@@ -67,6 +67,16 @@ export default async function HomePage() {
   const subbedOutIds = mySnap ? mySnap.players.map((x) => x.playerId).filter((id) => !liveSet.has(id)) : [];
   const subbedOut = subbedOutIds.length ? await prisma.player.findMany({ where: { id: { in: subbedOutIds } } }) : [];
 
+  // Pontos SÓ do mata-mata por jogador (entrou na troca = só KO; saiu = só grupos; ficou = tudo).
+  const KO_STAT_FIELDS = ["goals", "assists", "cleanSheet", "saves", "yellow", "red", "ownGoals", "shots", "shotsOnTarget", "shotsOnPost", "tackles", "interceptions", "penaltiesSaved", "penaltiesMissed", "shootOutSaved", "blockedShots", "foulsSuffered", "foulsCommitted", "goalsConceded"];
+  const koMatchRows = await prisma.match.findMany({ where: { stage: { not: "GROUP" } }, select: { id: true } });
+  const koIdSet = new Set(koMatchRows.map((m) => m.id));
+  const koStats = koIdSet.size ? await prisma.matchPlayerStat.findMany({ where: { matchId: { in: [...koIdSet] } } }) : [];
+  const koAgg = {};
+  for (const st of koStats) { const b = (koAgg[st.playerId] ||= {}); for (const f of KO_STAT_FIELDS) b[f] = (b[f] || 0) + (st[f] || 0); }
+  const scoutW = settings.squadRules?.scout || {};
+  const withKo = (pl) => ({ ...pl, koPts: playerScore({ position: pl.position, ...(koAgg[pl.id] || {}) }, scoutW) });
+
   // Mostra o TIME QUE ESTÁ PONTUANDO: fase de grupos (snapshot) até o mata-mata começar; depois o time do mata-mata.
   const koWin = await getKoWindow();
   let dispStarters = starters, dispReserves = reserves, dispCaptain = squad?.captainId, dispFormation = squad?.formation || "4-3-3", dispSubIn = subbedInIds, dispSubOut = subbedOut;
@@ -78,6 +88,10 @@ export default async function HomePage() {
     dispCaptain = mySnap.captainId; dispFormation = mySnap.formation || "4-3-3";
     dispSubIn = []; dispSubOut = [];
   }
+  // anexa koPts a todos os jogadores exibidos no campinho (o ScoredPitch usa pra fatiar grupos × mata-mata)
+  dispStarters = dispStarters.map(withKo);
+  dispReserves = dispReserves.map(withKo);
+  dispSubOut = dispSubOut.map(withKo);
 
   // Craque do dia: melhor jogador (por pontos no jogo) dos jogos de ONTEM.
   // Dia "lógico" do jogo: madrugada até 4h (BRT) conta como o dia anterior.

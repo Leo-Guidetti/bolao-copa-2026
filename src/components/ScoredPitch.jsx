@@ -12,7 +12,13 @@ import { playerScore } from "@/lib/scoring";
 export default function ScoredPitch({ formation, starters = [], reserves = [], captainId, scout = {}, capMult = 2, subbedInIds = [], subbedOut = [] }) {
   const [detail, setDetail] = useState(null);
   const subInSet = new Set(subbedInIds);
-  const pointsOf = (pl) => (subInSet.has(pl.id) ? 0 : playerScore(pl, scout) * (pl.id === captainId ? capMult : 1));
+  // Pontos cientes da troca do mata-mata: entrou = só KO (koPts); saiu = só grupos (total−koPts); ficou = tudo.
+  const pointsOf = (pl) => {
+    const total = playerScore(pl, scout);
+    const ko = pl.koPts || 0;
+    const base = subInSet.has(pl.id) ? ko : subbedOut.some((x) => x.id === pl.id) ? total - ko : total;
+    return base * (pl.id === captainId ? capMult : 1);
+  };
   return (
     <>
       <Pitch formation={formation} starters={starters} reserves={reserves} camisa10Id={captainId} capMult={capMult} showPoints pointsOf={pointsOf} onPlayer={setDetail} subbedInIds={subbedInIds} subbedOut={subbedOut} />

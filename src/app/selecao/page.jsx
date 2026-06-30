@@ -122,7 +122,13 @@ export default function SelecaoPage() {
   const scout = rules?.scout || {};
   const capMult = rules?.camisa10Multiplier ?? 2;
   const ptsOf = (pl) => playerScore(pl, scout);
-  const teamPoints = allPicked.reduce((sum, pl) => sum + ptsOf(pl) * (pl.id === camisa10Id ? capMult : 1), 0);
+  const koPtsOf = (pl) => pl.koPts || 0;
+  // Pontos cientes da troca do mata-mata: entrou = só KO (koPts); saiu = só grupos (total−koPts); ficou = tudo.
+  const baseOf = (pl) =>
+    subbedInIds.includes(pl.id) ? koPtsOf(pl)
+      : subbedOut.some((x) => x.id === pl.id) ? ptsOf(pl) - koPtsOf(pl)
+        : ptsOf(pl);
+  const teamPoints = allPicked.concat(subbedOut).reduce((sum, pl) => sum + baseOf(pl) * (pl.id === camisa10Id ? capMult : 1), 0);
   const LIST_ORDER = ["GOL", "LAT", "ZAG", "MEI", "ATA"];
   const ordByPos = (arr) => LIST_ORDER.flatMap((pos) => arr.filter((pl) => pl.position === pos));
   const listStarters = ordByPos(starterPlayers);
@@ -296,7 +302,7 @@ export default function SelecaoPage() {
   function ListRow({ p }) {
     const isCap = camisa10Id === p.id;
     const isSubIn = snapIds && !snapSet.has(p.id);
-    const shownPts = isSubIn ? 0 : ptsOf(p);
+    const shownPts = baseOf(p);
     return (
       <div onClick={() => setDetail(p)} className="flex cursor-pointer items-center gap-2 px-3 py-2">
         <span className="w-8 shrink-0 text-center text-[10px] font-bold text-[var(--muted)]">{p.position}</span>
@@ -421,9 +427,9 @@ export default function SelecaoPage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,340px)_1fr]">
         <div>
           {showGroupTeam ? (
-            <Pitch formation={dForm} starters={dStart} reserves={dRes} camisa10Id={dCap} capMult={capMult} showPoints pointsOf={(pl) => ptsOf(pl) * (pl.id === dCap ? capMult : 1)} onPlayer={setDetail} />
+            <Pitch formation={dForm} starters={dStart} reserves={dRes} camisa10Id={dCap} capMult={capMult} showPoints pointsOf={(pl) => (ptsOf(pl) - koPtsOf(pl)) * (pl.id === dCap ? capMult : 1)} onPlayer={setDetail} />
           ) : viewMode === "campo" ? (
-            <Pitch formation={formation} starters={starterPlayers} reserves={reservePlayers} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={(readOnly || koMode) ? undefined : toggleCaptain} onRemove={readOnly ? undefined : removePlayer} showPoints={readOnly} pointsOf={(pl) => (snapIds && !snapSet.has(pl.id) ? 0 : ptsOf(pl) * (pl.id === camisa10Id ? capMult : 1))} subbedInIds={subbedInIds} subbedOut={subbedOut} onPlayer={setDetail} />
+            <Pitch formation={formation} starters={starterPlayers} reserves={reservePlayers} camisa10Id={camisa10Id} capMult={capMult} onToggleCaptain={(readOnly || koMode) ? undefined : toggleCaptain} onRemove={readOnly ? undefined : removePlayer} showPoints={readOnly} pointsOf={(pl) => baseOf(pl) * (pl.id === camisa10Id ? capMult : 1)} subbedInIds={subbedInIds} subbedOut={subbedOut} onPlayer={setDetail} />
           ) : (
             <div className="space-y-3">
               <div className="card overflow-hidden p-0">
