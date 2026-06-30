@@ -11,19 +11,21 @@ const SIZES = {
 export default function PlayerAvatar({ player, size = "md", className = "" }) {
   const s = SIZES[size] || SIZES.md;
   const flag = flagUrl(player?.team);
-  const dim = player?.eliminated ? "grayscale opacity-60" : ""; // time eliminado: P&B e apagado
+  const elim = !!player?.eliminated; // time eliminado: foto levemente apagada (P&B); bandeira só P&B
+  const dimPhoto = elim ? "grayscale opacity-80" : "";
+  const dimFlag = elim ? "grayscale" : "";
   return (
     <span className={`relative inline-block shrink-0 ${s.box} ${className}`}>
       <span className={`block h-full w-full overflow-hidden rounded-full ${player?.photoUrl ? "bg-white" : "bg-[var(--hover)]"}`}>
         {player?.photoUrl ? (
-          <img src={photoSrc(player.photoUrl)} alt={player?.name || ""} loading="lazy" className={`h-full w-full object-cover object-top ${dim}`} />
+          <img src={photoSrc(player.photoUrl)} alt={player?.name || ""} loading="lazy" className={`h-full w-full object-cover object-top ${dimPhoto}`} />
         ) : (
           <svg viewBox="0 0 24 24" className="h-full w-full text-[var(--faint)]" fill="currentColor"><circle cx="12" cy="9" r="4" /><path d="M4 20.5c0-4.1 3.6-6.5 8-6.5s8 2.4 8 6.5V21H4z" /></svg>
         )}
       </span>
       {flag && (
         <span className={`absolute -bottom-0.5 -left-0.5 ${s.f} overflow-hidden rounded-full ring-2 ring-[var(--surface)]`}>
-          <img src={flag} alt={player?.team || ""} className={`h-full w-full object-cover ${dim}`} />
+          <img src={flag} alt={player?.team || ""} className={`h-full w-full object-cover ${dimFlag}`} />
         </span>
       )}
     </span>

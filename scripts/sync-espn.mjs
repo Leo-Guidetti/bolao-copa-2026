@@ -185,6 +185,13 @@ export async function run({ prisma, dry = false, log = console.log }) {
       const defTeam = norm(toApp(blk.team)) === norm(ev.homeApp) ? ev.awayApp : ev.homeApp;
       for (const sh of blk.shots || []) if (!sh.didScore && savedShooters.has(norm(sh.player))) koShootSaves[norm(defTeam)] = (koShootSaves[norm(defTeam)] || 0) + 1;
     }
+    // Quem classificou (empate decidido na disputa): grava o lado vencedor do shootout pra valer o bônus de palpite.
+    if (m.stage !== "GROUP" && (sum.shootout || []).length === 2 && ev.homeScore === ev.awayScore) {
+      const tally = sum.shootout.map((b) => ({ team: norm(toApp(b.team)), scored: (b.shots || []).filter((s) => s.didScore).length }));
+      const winTeam = tally[0].scored >= tally[1].scored ? tally[0].team : tally[1].team;
+      const side = winTeam === norm(ev.homeApp) ? "home" : "away";
+      if (!dry) await prisma.match.update({ where: { id: m.id }, data: { advancer: side } });
+    }
 
     // monta lista de (player do nosso banco, teamId, athId)
     const targets = [];

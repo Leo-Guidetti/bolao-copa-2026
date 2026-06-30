@@ -104,14 +104,16 @@ function Slot({ slot, camisa10Id, capMult = 2, onToggleCaptain, onRemove, showPo
   const flag = flagUrl(player.team);
   const isCap = camisa10Id === player.id;
   const isMine = mineIds.includes(player.id);
-  const dim = player.eliminated ? "grayscale opacity-60" : ""; // time eliminado: P&B e apagado
+  const elim = player.eliminated; // time eliminado: foto levemente apagada (P&B); bandeira só P&B
+  const dimPhoto = elim ? "grayscale opacity-80" : "";
+  const dimFlag = elim ? "grayscale" : "";
   return (
     <div className={`flex w-14 flex-col items-center gap-1 sm:w-16 ${onPlayer ? "cursor-pointer" : ""}`} onClick={onPlayer ? () => onPlayer(player) : undefined} title={onPlayer ? "Ver pontuação" : undefined}>
       <span className="relative">
         <span className={`flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-2 bg-white shadow ${isMine ? "border-emerald-400 ring-2 ring-emerald-400" : "border-white"}`}>
-          {player.photoUrl ? <img src={photoSrc(player.photoUrl)} alt={player.name} loading="lazy" className={`h-full w-full object-cover object-top ${dim}`} /> : <svg viewBox="0 0 24 24" className="h-7 w-7 text-[var(--faint)]" fill="currentColor"><circle cx="12" cy="9" r="4" /><path d="M4 20.5c0-4.1 3.6-6.5 8-6.5s8 2.4 8 6.5V21H4z" /></svg>}
+          {player.photoUrl ? <img src={photoSrc(player.photoUrl)} alt={player.name} loading="lazy" className={`h-full w-full object-cover object-top ${dimPhoto}`} /> : <svg viewBox="0 0 24 24" className="h-7 w-7 text-[var(--faint)]" fill="currentColor"><circle cx="12" cy="9" r="4" /><path d="M4 20.5c0-4.1 3.6-6.5 8-6.5s8 2.4 8 6.5V21H4z" /></svg>}
         </span>
-        {flag && <span className="absolute -bottom-1 -left-1 h-5 w-5 overflow-hidden rounded-full ring-2 ring-[var(--surface)]"><img src={flag} alt={player.team} className={`h-full w-full object-cover ${dim}`} /></span>}
+        {flag && <span className="absolute -bottom-1 -left-1 h-5 w-5 overflow-hidden rounded-full ring-2 ring-[var(--surface)]"><img src={flag} alt={player.team} className={`h-full w-full object-cover ${dimFlag}`} /></span>}
 
         {/* Selo de substituído (mata-mata) — só o emoji de setas, dentro do canto pra não cortar */}
         {subbed && !onRemove && <span className="absolute right-0 top-0 text-[13px] leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]" title="Substituído (vale só no mata-mata)">🔄</span>}
