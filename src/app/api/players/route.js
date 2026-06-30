@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/session";
 import { playerScore } from "@/lib/scoring";
 import { getSetting } from "@/lib/config";
+import { getEliminatedTeams } from "@/lib/elimination";
 
 const STAT_FIELDS = ["goals", "assists", "cleanSheet", "saves", "yellow", "red", "ownGoals", "shots", "shotsOnTarget", "shotsOnPost", "tackles", "interceptions", "penaltiesSaved", "penaltiesMissed", "shootOutSaved", "blockedShots", "foulsSuffered", "foulsCommitted", "goalsConceded"];
 
@@ -18,6 +19,7 @@ export async function GET() {
     getSetting("squadRules"),
   ]);
   const koIds = new Set(koMatches.map((m) => m.id));
+  const elim = await getEliminatedTeams();
   const scout = squadRules?.scout || {};
   const koAgg = {};
   for (const st of allStats) {
@@ -30,6 +32,7 @@ export async function GET() {
     ...p,
     minutes: minMap[p.id] || 0,
     koPts: playerScore({ position: p.position, ...(koAgg[p.id] || {}) }, scout),
+    eliminated: elim.has(p.team),
   })));
 }
 

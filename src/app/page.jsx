@@ -6,6 +6,7 @@ import { flagUrl, teamAbbr } from "@/lib/flags";
 import PlayerAvatar from "@/components/PlayerAvatar";
 import { STAGE_LABELS } from "@/lib/defaults";
 import { playerScore, scoreBreakdown } from "@/lib/scoring";
+import { getEliminatedTeams } from "@/lib/elimination";
 import MatchCalendar from "@/components/MatchCalendar";
 import ScoredPitch from "@/components/ScoredPitch";
 import LeigoMaster from "@/components/LeigoMaster";
@@ -75,7 +76,8 @@ export default async function HomePage() {
   const koAgg = {};
   for (const st of koStats) { const b = (koAgg[st.playerId] ||= {}); for (const f of KO_STAT_FIELDS) b[f] = (b[f] || 0) + (st[f] || 0); }
   const scoutW = settings.squadRules?.scout || {};
-  const withKo = (pl) => ({ ...pl, koPts: playerScore({ position: pl.position, ...(koAgg[pl.id] || {}) }, scoutW) });
+  const elimTeams = await getEliminatedTeams();
+  const withKo = (pl) => ({ ...pl, koPts: playerScore({ position: pl.position, ...(koAgg[pl.id] || {}) }, scoutW), eliminated: elimTeams.has(pl.team) });
 
   // Mostra o TIME QUE ESTÁ PONTUANDO: fase de grupos (snapshot) até o mata-mata começar; depois o time do mata-mata.
   const koWin = await getKoWindow();
