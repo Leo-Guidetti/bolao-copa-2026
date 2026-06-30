@@ -175,6 +175,17 @@ export async function run({ prisma, dry = false, log = console.log }) {
     const m = matchFor(ev);
     let sum;
     try { sum = await getJSON(`${SITE}/summary?event=${ev.id}`); } catch (e) { log(`  (sem summary ${ev.id})`); continue; }
+
+    // Defesas na DISPUTA de pênaltis (a API de stats por jogador não traz). Usa o shootout
+    // estruturado (cobrador + didScore) + a narração pra separar "defendido" de "pra fora".
+    const savedShooters = new Set();
+    for (const cm of sum.commentary || []) { const mm = /^Penalty saved\.\s*([^(]+)\(/.exec(cm.text || ""); if (mm) savedShooters.add(norm(mm[1])); }
+    const koShootSaves = {}; // { norm(timeQueDefendeu): qtdDefesas }
+    for (const blk of sum.shootout || []) {
+      const defTeam = norm(toApp(blk.team)) === norm(ev.homeApp) ? ev.awayApp : ev.homeApp;
+      for (const sh of blk.shots || []) if (!sh.didScore && savedShooters.has(norm(sh.player))) koShootSaves[norm(defTeam)] = (koShootSaves[norm(defTeam)] || 0) + 1;
+    }
+
     // monta lista de (player do nosso banco, teamId, athId)
     const targets = [];
     for (const block of sum.rosters || []) {
@@ -219,7 +230,7 @@ export async function run({ prisma, dry = false, log = console.log }) {
         penaltiesMissed: penMissed,                  // pênalti perdido
         saves: cval(cats, "goalKeeping", "saves"),
         penaltiesSaved: cval(cats, "goalKeeping", "penaltyKicksSaved"),
-        shootOutSaved: firstGame ? 0 : cval(cats, "goalKeeping", "shootOutKicksSaved"), // defesa de pênalti na disputa (só da 2ª rodada)
+        shootOutSaved: firstGame ? 0 : Math.max(cval(cats, "goalKeeping", "shootOutKicksSaved"), (p.position === "GOL" && minutes >= 90) ? (koShootSaves[norm(p.team)] || 0) : 0), // defesa de pênalti na disputa (do shootout da ESPN)
         blockedShots: firstGame ? 0 : cval(cats, "defensive", "outfielderBlock"), // bloqueio FEITO pelo jogador (só da 2ª rodada)
         foulsSuffered: firstGame ? 0 : cval(cats, "general", "foulsSuffered"),
         foulsCommitted: firstGame ? 0 : cval(cats, "general", "foulsCommitted"),
