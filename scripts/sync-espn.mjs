@@ -97,6 +97,28 @@ const cval = (cats, cat, name) => {
   return s ? (Number(s.value) || 0) : 0;
 };
 
+// Placar de 90 MIN (períodos 1 e 2) + quem classificou, na orientação do ESPN (mandante/visitante do ESPN).
+// O ESPN grava o placar COM prorrogação; o bolão conta só o tempo normal. O texto do gol lista o
+// mandante primeiro ("Goal! Casa X, Fora Y"), então lê-se posicional. Retorna null se faltar dado.
+function regKoResult(sum, ev) {
+  const regGoals = (sum.keyEvents || []).filter((e) => (e.period?.number ?? 9) <= 2 && /^Goal!/.test(e.text || ""));
+  const haveGoals = regGoals.length > 0 || (ev.homeScore === 0 && ev.awayScore === 0);
+  if (!haveGoals) return null;
+  let home = 0, away = 0;
+  if (regGoals.length) { const mm = /Goal!\s*.+?\s+(\d+),\s*.+?\s+(\d+)/.exec(regGoals[regGoals.length - 1].text); if (mm) { home = +mm[1]; away = +mm[2]; } }
+  let advancer;
+  if (home === away) { // empate no tempo normal -> decidido na prorrogação/pênaltis
+    if (ev.homeScore > ev.awayScore) advancer = "home";
+    else if (ev.awayScore > ev.homeScore) advancer = "away";
+    else if ((sum.shootout || []).length === 2) {
+      const tally = sum.shootout.map((b) => ({ team: norm(toApp(b.team)), scored: (b.shots || []).filter((s) => s.didScore).length }));
+      const winTeam = tally[0].scored >= tally[1].scored ? tally[0].team : tally[1].team;
+      advancer = winTeam === norm(ev.homeApp) ? "home" : "away";
+    }
+  }
+  return { home, away, advancer };
+}
+
 export async function run({ prisma, dry = false, log = console.log }) {
   const events = (await fetchEvents(log)).map(parseEvent);
   log(`ESPN: ${events.length} jogos encontrados.`);
@@ -130,18 +152,33 @@ export async function run({ prisma, dry = false, log = console.log }) {
   }
   const matchFor = (ev) => byPair.get(pairKey(ev.homeApp, ev.awayApp)) || null;
 
-  // ---- 1) PLACARES ----
+  // ---- 1) PLACARES ---- (mata-mata encerrado usa o placar de 90 MIN, não o final com prorrogação)
   let placUpd = 0; const unmatched = new Set();
   for (const ev of events) {
     const m = matchFor(ev);
     if (!m) { if (ev.homeApp && ev.awayApp) unmatched.add(`${ev.homeApp} x ${ev.awayApp}`); continue; }
     if (ev.homeScore == null || ev.awayScore == null) continue;
+    const swapped = norm(ev.homeApp) !== norm(m.homeTeam);
     let hs = ev.homeScore, as = ev.awayScore;
-    if (norm(ev.homeApp) !== norm(m.homeTeam)) { const t = hs; hs = as; as = t; }
-    if (m.homeScore !== hs || m.awayScore !== as || m.finished !== ev.finished) {
-      log(`${ev.finished ? "[FT]" : "[--]"} ${m.homeTeam} ${hs} x ${as} ${m.awayTeam}`);
+    if (swapped) { const t = hs; hs = as; as = t; }
+    let advancer;
+    // Jogo de mata-mata encerrado: recalcula o placar de 90 min e quem classificou (roda pra TODOS, sempre).
+    if (m.stage !== "GROUP" && ev.finished) {
+      try {
+        const sum = await getJSON(`${SITE}/summary?event=${ev.id}`);
+        const reg = regKoResult(sum, ev); // orientação do ESPN
+        if (reg) {
+          hs = swapped ? reg.away : reg.home;
+          as = swapped ? reg.home : reg.away;
+          if (reg.advancer) advancer = swapped ? (reg.advancer === "home" ? "away" : "home") : reg.advancer;
+        }
+      } catch {}
+    }
+    const advChanged = advancer && m.advancer !== advancer;
+    if (m.homeScore !== hs || m.awayScore !== as || m.finished !== ev.finished || advChanged) {
+      log(`${ev.finished ? "[FT]" : "[--]"} ${m.homeTeam} ${hs} x ${as} ${m.awayTeam}${advancer ? ` (passa: ${advancer})` : ""}`);
       placUpd++;
-      if (!dry) await prisma.match.update({ where: { id: m.id }, data: { homeScore: hs, awayScore: as, finished: ev.finished } });
+      if (!dry) await prisma.match.update({ where: { id: m.id }, data: { homeScore: hs, awayScore: as, finished: ev.finished, ...(advancer ? { advancer } : {}) } });
     }
   }
   log(`${dry ? "[DRY] " : ""}Placares atualizados: ${placUpd}.`);
@@ -210,28 +247,6 @@ export async function run({ prisma, dry = false, log = console.log }) {
     for (const blk of sum.shootout || []) {
       const defTeam = norm(toApp(blk.team)) === norm(ev.homeApp) ? ev.awayApp : ev.homeApp;
       for (const sh of blk.shots || []) if (!sh.didScore && savedShooters.has(norm(sh.player))) koShootSaves[norm(defTeam)] = (koShootSaves[norm(defTeam)] || 0) + 1;
-    }
-    // Placar de 90 MIN + quem classificou (só mata-mata). O ESPN grava o placar COM prorrogação;
-    // o bolão conta só o tempo normal (períodos 1 e 2). Prorrogação/pênaltis definem só o classificado.
-    // O texto do gol do ESPN lista o MANDANTE primeiro ("Goal! Casa X, Fora Y"), então lê-se posicional.
-    {
-      const regGoals = (sum.keyEvents || []).filter((e) => (e.period?.number ?? 9) <= 2 && /^Goal!/.test(e.text || ""));
-      const haveGoals = regGoals.length > 0 || (ev.homeScore === 0 && ev.awayScore === 0); // evita zerar placar se faltar dado
-      if (m.stage !== "GROUP" && haveGoals) {
-        let regHome = 0, regAway = 0;
-        if (regGoals.length) { const mm = /Goal!\s*.+?\s+(\d+),\s*.+?\s+(\d+)/.exec(regGoals[regGoals.length - 1].text); if (mm) { regHome = +mm[1]; regAway = +mm[2]; } }
-        const data = { homeScore: regHome, awayScore: regAway };
-        if (regHome === regAway) { // empate no tempo normal -> decidido na prorrogação/pênaltis
-          if (ev.homeScore > ev.awayScore) data.advancer = "home";
-          else if (ev.awayScore > ev.homeScore) data.advancer = "away";
-          else if ((sum.shootout || []).length === 2) {
-            const tally = sum.shootout.map((b) => ({ team: norm(toApp(b.team)), scored: (b.shots || []).filter((s) => s.didScore).length }));
-            const winTeam = tally[0].scored >= tally[1].scored ? tally[0].team : tally[1].team;
-            data.advancer = winTeam === norm(ev.homeApp) ? "home" : "away";
-          }
-        }
-        if (!dry) await prisma.match.update({ where: { id: m.id }, data });
-      }
     }
 
     // monta lista de (player do nosso banco, teamId, athId)
