@@ -78,6 +78,7 @@ function parseEvent(e) {
   const away = cs.find((x) => x.homeAway === "away");
   return {
     id: e.id,
+    date: e.date, // ISO do horário do jogo — usado pra casar os confrontos de mata-mata (times ainda em placeholder)
     homeApp: toApp(home?.team?.displayName), awayApp: toApp(away?.team?.displayName),
     homeScore: home?.score != null ? Number(home.score) : null,
     awayScore: away?.score != null ? Number(away.score) : null,
@@ -85,6 +86,10 @@ function parseEvent(e) {
     state: e.status?.type?.state, // pre | in | post
   };
 }
+
+// ESPN devolve nomes reais (ex.: "Belgium") ou rótulos de vaga ("Round of 16 Winner", "Group L Winner").
+// Consideramos "definido" quando NÃO é um desses rótulos.
+const isRealTeam = (n) => !!n && !/(winner|runner|place|round of|group\s|loser|advance|1st|2nd|3rd)/i.test(n);
 
 const cval = (cats, cat, name) => {
   const c = (cats || []).find((x) => x.name === cat);
@@ -97,6 +102,27 @@ export async function run({ prisma, dry = false, log = console.log }) {
   log(`ESPN: ${events.length} jogos encontrados.`);
 
   const matches = await prisma.match.findMany();
+
+  // ---- 0) CHAVEAMENTO: preenche os times dos confrontos de mata-mata conforme o ESPN os resolve.
+  // Casa por HORÁRIO (os times ainda podem estar em placeholder). Reflete no calendário e libera
+  // os palpites automaticamente — o bloqueio é por time definido (bandeira), mesma regra dos 16-avos.
+  const koByKick = new Map();
+  for (const m of matches) if (m.stage !== "GROUP") koByKick.set(new Date(m.kickoff).toISOString().slice(0, 16), m);
+  let koFilled = 0;
+  for (const ev of events) {
+    const m = ev.date ? koByKick.get(ev.date.slice(0, 16)) : null;
+    if (!m) continue;
+    const newHome = isRealTeam(ev.homeApp) ? ev.homeApp : m.homeTeam;
+    const newAway = isRealTeam(ev.awayApp) ? ev.awayApp : m.awayTeam;
+    if (newHome !== m.homeTeam || newAway !== m.awayTeam) {
+      koFilled++;
+      log(`chaveamento: ${m.homeTeam} x ${m.awayTeam} -> ${newHome} x ${newAway}`);
+      if (!dry) await prisma.match.update({ where: { id: m.id }, data: { homeTeam: newHome, awayTeam: newAway } });
+      m.homeTeam = newHome; m.awayTeam = newAway; // reflete em memória pro passo de placares casar
+    }
+  }
+  log(`${dry ? "[DRY] " : ""}Chaveamento preenchido: ${koFilled}.`);
+
   const byPair = new Map();
   for (const m of matches) {
     if (m.homeTeam === "A definir" || m.awayTeam === "A definir") continue;

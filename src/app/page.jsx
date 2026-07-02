@@ -123,14 +123,15 @@ export default async function HomePage() {
     ? await prisma.bet.findMany({ where: { participantId: me.id, matchId: { in: upcoming.map((m) => m.id) } }, select: { matchId: true } })
     : [];
   const betSet = new Set(myBets.map((b) => b.matchId));
-  const missing = upcoming.filter((m) => !betSet.has(m.id));
+  // só conta como "faltando" o que dá pra palpitar: confronto definido (os dois times com bandeira)
+  const missing = upcoming.filter((m) => !betSet.has(m.id) && flagUrl(m.homeTeam) && flagUrl(m.awayTeam));
   const spDay = (d) => new Date(d).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
   const todayStr = spDay(now), tmrwStr = spDay(new Date(now.getTime() + 86400000));
-  const fmtMatch = (m) => {
+  const fmtWhen = (m) => {
     const ds = spDay(m.kickoff);
     const dl = ds === todayStr ? "hoje" : ds === tmrwStr ? "amanhã" : new Date(m.kickoff).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "short" }).replace(".", "");
     const t = new Date(m.kickoff).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
-    return `${teamAbbr(m.homeTeam)} × ${teamAbbr(m.awayTeam)} (${dl} ${t})`;
+    return `${dl} ${t}`;
   };
 
   return (
@@ -148,9 +149,20 @@ export default async function HomePage() {
             {missing.length ? (
               <>
                 <h2 className="font-semibold">Você tem {missing.length} palpite{missing.length > 1 ? "s" : ""} faltando</h2>
-                <p className="mt-0.5 text-sm text-[var(--muted)]">
-                  Próximos 3 dias: {missing.slice(0, 4).map(fmtMatch).join(" · ")}{missing.length > 4 ? ` · +${missing.length - 4}` : ""}
-                </p>
+                <ul className="mt-1.5 space-y-1">
+                  {missing.slice(0, 6).map((m) => (
+                    <li key={m.id} className="flex flex-wrap items-center gap-1.5 text-sm">
+                      <span className="text-amber-500">•</span>
+                      {flagUrl(m.homeTeam) && <img src={flagUrl(m.homeTeam)} alt={m.homeTeam} className="h-3.5 w-5 shrink-0 rounded-sm object-cover" />}
+                      <b className="font-semibold">{teamAbbr(m.homeTeam)}</b>
+                      <span className="text-[var(--faint)]">×</span>
+                      {flagUrl(m.awayTeam) && <img src={flagUrl(m.awayTeam)} alt={m.awayTeam} className="h-3.5 w-5 shrink-0 rounded-sm object-cover" />}
+                      <b className="font-semibold">{teamAbbr(m.awayTeam)}</b>
+                      <span className="ml-1 text-xs font-normal text-[var(--faint)]">{fmtWhen(m)}</span>
+                    </li>
+                  ))}
+                  {missing.length > 6 && <li className="ml-4 text-xs text-[var(--faint)]">+{missing.length - 6} outro{missing.length - 6 > 1 ? "s" : ""}…</li>}
+                </ul>
               </>
             ) : (
               <>
