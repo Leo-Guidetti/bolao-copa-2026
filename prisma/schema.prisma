@@ -42,6 +42,7 @@ model Match {
   awayScore Int?
   finished  Boolean  @default(false)
   advancer  String? // mata-mata: "home" | "away" — quem classificou quando empatou em 90 min (pênaltis/prorrogação)
+  manualResult Boolean @default(false) // placar/classificado editados na mão no admin — o sync não sobrescreve
   order     Int      @default(0)
 
   bets        Bet[]

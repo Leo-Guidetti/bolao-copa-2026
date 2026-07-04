@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { flagUrl } from "@/lib/flags";
+import { flagUrl, teamAbbr } from "@/lib/flags";
 import { fileToAvatar } from "@/lib/avatar";
 
 const STAGES = ["GROUP", "R32", "R16", "QF", "SF", "THIRD", "FINAL"];
@@ -15,6 +15,7 @@ const TABS = [
   ["ranking", "Pesos do ranking"],
   ["prize", "Premiação"],
   ["participants", "Participantes"],
+  ["knockout", "Mata-mata"],
   ["matches", "Jogos & resultados"],
   ["matchstats", "Stats dos jogos"],
   ["players", "Jogadores & scout"],
@@ -95,6 +96,7 @@ export default function AdminPage() {
       </div>
       {["scoring", "squadRules", "ranking", "prize"].includes(tab) && <SettingsEditor tab={tab} />}
       {tab === "participants" && <Participants />}
+      {tab === "knockout" && <KnockoutEditor />}
       {tab === "matches" && <Matches />}
       {tab === "matchstats" && <MatchStats />}
       {tab === "players" && <Players />}
@@ -313,6 +315,80 @@ function Participants() {
           );
         })}
       </ul>
+    </div>
+  );
+}
+
+const KO_ORDER = ["R32", "R16", "QF", "SF", "THIRD", "FINAL"];
+// Editor rápido do MATA-MATA: placar (90 min) + quem classificou. Ao salvar, trava o jogo (o sync não sobrescreve).
+function KnockoutEditor() {
+  const [list, setList] = useState(null);
+  const [draft, setDraft] = useState({}); // id -> { home, away, adv }
+  const [savingId, setSavingId] = useState(null);
+  const load = () => fetch("/api/matches").then((r) => r.json()).then((ms) => {
+    const ko = ms.filter((m) => m.stage !== "GROUP");
+    setList(ko);
+    const d = {};
+    for (const m of ko) d[m.id] = { home: m.homeScore ?? "", away: m.awayScore ?? "", adv: m.advancer || "" };
+    setDraft(d);
+  });
+  useEffect(() => { load(); }, []);
+  const set = (id, k, v) => setDraft((s) => ({ ...s, [id]: { ...s[id], [k]: v } }));
+
+  async function save(m) {
+    const d = draft[m.id];
+    setSavingId(m.id);
+    const hs = d.home === "" ? null : Number(d.home);
+    const as = d.away === "" ? null : Number(d.away);
+    // classificado: no empate exige escolha; com vencedor, define pelo placar
+    let adv = d.adv || null;
+    if (hs != null && as != null && hs !== as) adv = hs > as ? "home" : "away";
+    await fetch("/api/matches", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: m.id, homeScore: hs, awayScore: as, advancer: adv, finished: hs != null && as != null, manualResult: true }) });
+    setSavingId(null); await load();
+  }
+  async function unlock(m) { setSavingId(m.id); await fetch("/api/matches", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: m.id, manualResult: false }) }); setSavingId(null); await load(); }
+
+  if (!list) return <p className="text-sm text-[var(--muted)]">Carregando…</p>;
+  const Team = ({ t, align }) => (
+    <span className={`flex min-w-0 items-center gap-1.5 ${align === "right" ? "flex-row-reverse text-right" : ""}`}>
+      {flagUrl(t) ? <img src={flagUrl(t)} alt={t} className="h-4 w-6 shrink-0 rounded-sm object-cover" /> : <span className="h-4 w-6 shrink-0 rounded-sm bg-[var(--hover)]" />}
+      <span className="truncate text-sm font-medium" title={t}>{teamAbbr(t)}</span>
+    </span>
+  );
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-[var(--muted)]">Edite o <b>placar de 90 min</b> e <b>quem classificou</b> de cada jogo do mata-mata. No <b>empate</b>, escolha quem passou (pênaltis/prorrogação). Ao salvar, o jogo fica <b>travado</b> 🔒 e o sync automático não sobrescreve mais.</p>
+      {KO_ORDER.filter((s) => list.some((m) => m.stage === s)).map((s) => (
+        <div key={s} className="card p-3">
+          <h3 className="mb-2 font-semibold">{STAGE_LABELS[s]}</h3>
+          <div className="space-y-2">
+            {list.filter((m) => m.stage === s).sort((a, b) => a.order - b.order).map((m) => {
+              const d = draft[m.id] || {}; const drawn = d.home !== "" && d.away !== "" && Number(d.home) === Number(d.away);
+              const defined = flagUrl(m.homeTeam) && flagUrl(m.awayTeam);
+              return (
+                <div key={m.id} className="flex flex-wrap items-center gap-2 border-b border-[var(--border)] pb-2 last:border-0">
+                  <div className="flex flex-1 items-center justify-end gap-1 min-w-[90px]"><Team t={m.homeTeam} align="right" /></div>
+                  <input type="number" min="0" disabled={!defined} className="input w-12 px-0 text-center" value={d.home ?? ""} onChange={(e) => set(m.id, "home", e.target.value)} />
+                  <span className="text-[var(--faint)]">×</span>
+                  <input type="number" min="0" disabled={!defined} className="input w-12 px-0 text-center" value={d.away ?? ""} onChange={(e) => set(m.id, "away", e.target.value)} />
+                  <div className="flex flex-1 items-center gap-1 min-w-[90px]"><Team t={m.awayTeam} /></div>
+                  {drawn && (
+                    <div className="flex items-center gap-1 text-xs">
+                      <span className="text-[var(--faint)]">Passa:</span>
+                      {[["home", m.homeTeam], ["away", m.awayTeam]].map(([side, t]) => (
+                        <button key={side} type="button" onClick={() => set(m.id, "adv", side)} className={`rounded-full border px-2 py-0.5 font-semibold ${d.adv === side ? "border-brand bg-brand-light text-brand-dark" : "border-[var(--border)] text-[var(--muted)]"}`}>{teamAbbr(t)}</button>
+                      ))}
+                    </div>
+                  )}
+                  {m.manualResult && <span className="text-xs" title="Travado — sync não sobrescreve">🔒</span>}
+                  <button type="button" onClick={() => save(m)} disabled={savingId === m.id || !defined} className="rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white disabled:opacity-50">{savingId === m.id ? "…" : "Salvar"}</button>
+                  {m.manualResult && <button type="button" onClick={() => unlock(m)} disabled={savingId === m.id} className="rounded-full bg-[var(--hover)] px-2 py-1 text-xs text-[var(--muted)]" title="Voltar ao automático">↺</button>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

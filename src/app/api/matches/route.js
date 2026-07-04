@@ -38,6 +38,8 @@ export async function PATCH(req) {
   if (b.homeScore !== undefined) data.homeScore = b.homeScore === "" || b.homeScore == null ? null : Number(b.homeScore);
   if (b.awayScore !== undefined) data.awayScore = b.awayScore === "" || b.awayScore == null ? null : Number(b.awayScore);
   if (b.finished !== undefined) data.finished = !!b.finished;
+  if (b.advancer !== undefined) data.advancer = b.advancer === "home" || b.advancer === "away" ? b.advancer : null;
+  if (b.manualResult !== undefined) data.manualResult = !!b.manualResult;
   const m = await prisma.match.update({ where: { id: b.id }, data });
   return Response.json(m);
 }

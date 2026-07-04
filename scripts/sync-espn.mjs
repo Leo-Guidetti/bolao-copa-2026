@@ -139,7 +139,7 @@ export async function run({ prisma, dry = false, log = console.log }) {
   let koFilled = 0;
   for (const ev of events) {
     const m = ev.date ? koByKick.get(ev.date.slice(0, 16)) : null;
-    if (!m) continue;
+    if (!m || m.manualResult) continue;
     const newHome = isRealTeam(ev.homeApp) ? ev.homeApp : m.homeTeam;
     const newAway = isRealTeam(ev.awayApp) ? ev.awayApp : m.awayTeam;
     if (newHome !== m.homeTeam || newAway !== m.awayTeam) {
@@ -163,6 +163,7 @@ export async function run({ prisma, dry = false, log = console.log }) {
   for (const ev of events) {
     const m = matchFor(ev);
     if (!m) { if (ev.homeApp && ev.awayApp) unmatched.add(`${ev.homeApp} x ${ev.awayApp}`); continue; }
+    if (m.manualResult) continue; // placar/classificado travado no admin — não sobrescreve
     if (ev.homeScore == null || ev.awayScore == null) continue;
     const swapped = norm(ev.homeApp) !== norm(m.homeTeam);
     let hs = ev.homeScore, as = ev.awayScore;
