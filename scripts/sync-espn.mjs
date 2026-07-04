@@ -97,15 +97,21 @@ const cval = (cats, cat, name) => {
   return s ? (Number(s.value) || 0) : 0;
 };
 
-// Placar de 90 MIN (períodos 1 e 2) + quem classificou, na orientação do ESPN (mandante/visitante do ESPN).
-// O ESPN grava o placar COM prorrogação; o bolão conta só o tempo normal. O texto do gol lista o
-// mandante primeiro ("Goal! Casa X, Fora Y"), então lê-se posicional. Retorna null se faltar dado.
+// Placar de 90 MIN + quem classificou, na orientação do ESPN. O ESPN grava o placar final COM
+// prorrogação (excl. pênaltis); o bolão conta só o tempo normal. Em vez de somar a narração (que às
+// vezes vem incompleta), fazemos: 90min = PLACAR FINAL − gols da PRORROGAÇÃO (períodos >= 3).
 function regKoResult(sum, ev) {
-  const regGoals = (sum.keyEvents || []).filter((e) => (e.period?.number ?? 9) <= 2 && /^Goal!/.test(e.text || ""));
-  const haveGoals = regGoals.length > 0 || (ev.homeScore === 0 && ev.awayScore === 0);
-  if (!haveGoals) return null;
-  let home = 0, away = 0;
-  if (regGoals.length) { const mm = /Goal!\s*.+?\s+(\d+),\s*.+?\s+(\d+)/.exec(regGoals[regGoals.length - 1].text); if (mm) { home = +mm[1]; away = +mm[2]; } }
+  if (ev.homeScore == null || ev.awayScore == null) return null;
+  let etHome = 0, etAway = 0;
+  for (const e of sum.keyEvents || []) {
+    if ((e.period?.number ?? 0) >= 3 && /^Goal!/.test(e.text || "")) {
+      const t = norm(toApp(e.team?.displayName));
+      if (t === norm(ev.homeApp)) etHome++;
+      else if (t === norm(ev.awayApp)) etAway++;
+    }
+  }
+  const home = Math.max(0, ev.homeScore - etHome);
+  const away = Math.max(0, ev.awayScore - etAway);
   let advancer;
   if (home === away) { // empate no tempo normal -> decidido na prorrogação/pênaltis
     if (ev.homeScore > ev.awayScore) advancer = "home";
