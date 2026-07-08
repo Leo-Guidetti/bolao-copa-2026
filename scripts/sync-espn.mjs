@@ -250,10 +250,21 @@ export async function run({ prisma, dry = false, log = console.log }) {
     // estruturado (cobrador + didScore) + a narração pra separar "defendido" de "pra fora".
     const savedShooters = new Set();
     for (const cm of sum.commentary || []) { const mm = /^Penalty saved\.\s*([^(]+)\(/.exec(cm.text || ""); if (mm) savedShooters.add(norm(mm[1])); }
-    const koShootSaves = {}; // { norm(timeQueDefendeu): qtdDefesas }
+    const koShootSaves = {}; // { norm(timeQueDefendeu): qtdDefesas do goleiro na disputa }
     for (const blk of sum.shootout || []) {
       const defTeam = norm(toApp(blk.team)) === norm(ev.homeApp) ? ev.awayApp : ev.homeApp;
-      for (const sh of blk.shots || []) if (!sh.didScore && savedShooters.has(norm(sh.player))) koShootSaves[norm(defTeam)] = (koShootSaves[norm(defTeam)] || 0) + 1;
+      for (const sh of blk.shots || []) if (!sh.didScore && savedShooters.has(norm(sh.player))) koShootSaves[norm(defTeam)] = (koShootSaves[norm(defTeam)] || 0) + 1; // defesa do goleiro adversário
+    }
+    // Pênaltis DEFENDIDOS no tempo normal/prorrogação (fora da disputa) — a ESPN NÃO conta no penaltyKicksMissed
+    // (que só pega os que vão pra fora). Aqui pegamos os defendidos pela narração, pra também descontarem.
+    const shootoutShooters = new Set();
+    for (const blk of sum.shootout || []) for (const sh of blk.shots || []) shootoutShooters.add(norm(sh.player));
+    const regPenMissed = {}; // { playerDbId: pênaltis defendidos no tempo normal }
+    for (const cm of sum.commentary || []) {
+      const mm = /^Penalty saved\.\s*([^(]+)\(([^)]+)\)/.exec(cm.text || "");
+      if (!mm || shootoutShooters.has(norm(mm[1]))) continue; // pênaltis da disputa NÃO descontam, então são ignorados aqui
+      const pl = find(toApp(mm[2].trim()), mm[1].trim());
+      if (pl) regPenMissed[pl.id] = (regPenMissed[pl.id] || 0) + 1;
     }
 
     // monta lista de (player do nosso banco, teamId, athId)
@@ -297,7 +308,7 @@ export async function run({ prisma, dry = false, log = console.log }) {
         shots: Math.max(offTarget, totalShots - onTarget - onPost), // fora + finalizações que a ESPN às vezes só reporta no total
         shotsOnTarget: Math.max(0, onTarget - gls),  // no alvo que não viraram gol
         shotsOnPost: firstGame ? 0 : onPost,         // trave (só a partir do 2º jogo do time)
-        penaltiesMissed: penMissed,                  // pênalti perdido
+        penaltiesMissed: penMissed + (regPenMissed[p.id] || 0), // perdido: pra fora (ESPN) + defendido no tempo normal (a disputa NÃO desconta)
         saves: cval(cats, "goalKeeping", "saves"),
         penaltiesSaved: cval(cats, "goalKeeping", "penaltyKicksSaved"),
         shootOutSaved: firstGame ? 0 : Math.max(cval(cats, "goalKeeping", "shootOutKicksSaved"), (p.position === "GOL" && minutes >= 90) ? (koShootSaves[norm(p.team)] || 0) : 0), // defesa de pênalti na disputa (do shootout da ESPN)
