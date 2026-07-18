@@ -25,12 +25,19 @@ export function eliminatedFrom(matches) {
 
     // Mata-mata encerrado: quem perdeu está eliminado.
     if (m.homeScore != null && m.awayScore != null) {
-      let loser = null;
-      if (m.homeScore > m.awayScore) loser = m.awayTeam;
-      else if (m.awayScore > m.homeScore) loser = m.homeTeam;
-      else if (m.advancer === "home") loser = m.awayTeam;
-      else if (m.advancer === "away") loser = m.homeTeam;
-      if (loser) out.add(loser);
+      if (m.stage === "SF") {
+        // Perdedor da semi ainda joga a DISPUTA DE 3º LUGAR — não elimina ainda (ainda pontua).
+      } else if (m.stage === "THIRD" || m.stage === "FINAL") {
+        // Fim de linha pros dois: acabou o torneio pra eles.
+        out.add(m.homeTeam); out.add(m.awayTeam);
+      } else {
+        let loser = null;
+        if (m.homeScore > m.awayScore) loser = m.awayTeam;
+        else if (m.awayScore > m.homeScore) loser = m.homeTeam;
+        else if (m.advancer === "home") loser = m.awayTeam;
+        else if (m.advancer === "away") loser = m.homeTeam;
+        if (loser) out.add(loser);
+      }
     }
   }
 
